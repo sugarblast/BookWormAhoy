@@ -1,0 +1,30 @@
+{
+  "name": "bookworm-reader",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Zero-backend PDF reader that opens the PDFs in your Google Drive like books. Runs entirely in the browser; hosted on GitHub Pages.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "predev": "node scripts/copy-pdfjs-assets.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-pdfjs-assets.mjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/hanken-grotesk": "^5.0.0",
+    "@fontsource-variable/literata": "^5.0.0",
+    "pdfjs-dist": "^6.2.108"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "tailwindcss": "^4.3.0",
+    "vite": "^7.0.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}
