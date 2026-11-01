@@ -31,8 +31,11 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # Repository variable (not a secret): Settings > Secrets and variables > Actions > Variables
+          # Repository variables (not secrets): Settings > Secrets and variables > Actions > Variables.
+          # Both values are public identifiers; the API key is locked to this site's address in Cloud Console.
           VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_API_KEY: ${{ vars.GOOGLE_API_KEY }}
+          VITE_DROPBOX_APP_KEY: ${{ vars.DROPBOX_APP_KEY }}   # optional: leave unset to hide Dropbox
 
       - uses: actions/upload-pages-artifact@v3
         with:

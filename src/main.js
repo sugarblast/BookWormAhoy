@@ -6,10 +6,16 @@ import '@fontsource-variable/literata';
 import '@fontsource-variable/hanken-grotesk';
 
 import { applyTheme } from './lib/settings.js';
+import { getApiKey, getClientId, isDriveConfigured, isDropboxConfigured } from './config.js';
 import { mountLibrary } from './views/library.js';
 import { h } from './lib/dom.js';
 
 applyTheme();
+
+// Which cloud sources this build has (no values are printed). Handy when a tile is missing.
+console.info(
+  `[Bookworm] Google Drive: ${isDriveConfigured() ? 'on' : `off (the build is missing ${[getClientId() ? '' : 'GOOGLE_CLIENT_ID', getApiKey() ? '' : 'GOOGLE_API_KEY'].filter(Boolean).join(' and ')})`}; Dropbox: ${isDropboxConfigured() ? 'on' : 'off'}.`,
+);
 
 const app = document.getElementById('app');
 let unmount = null;

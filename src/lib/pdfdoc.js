@@ -144,8 +144,8 @@ export function describeOpenError(error) {
   if (name === 'InvalidPDFException') return { kind: 'invalid', message: 'This file is not a valid PDF, or it is damaged.' };
   if (name === 'MissingLocalFile') return { kind: 'missing', message: error.message };
   const status = error?.status ?? error?.details?.status;
-  if (status === 404) return { kind: 'missing', message: 'Google Drive could not find this file. It may have been deleted or unshared.' };
-  if (status === 403) return { kind: 'forbidden', message: 'Google Drive refused access to this file. Ask the owner to share it with you.' };
+  if (status === 404) return { kind: 'missing', message: 'Google Drive could not find this file. It may have been deleted, or Bookworm\'s access to it ended. Remove it from the shelf and pick it again.' };
+  if (status === 403) return { kind: 'forbidden', message: 'Google Drive refused access to this file. Pick it again with Open from Google Drive, or ask the owner to share it with you.' };
   if (name === 'MissingPDFException') return { kind: 'missing', message: 'The file could not be found.' };
   if (name === 'UnexpectedResponseException' || name === 'ResponseException') {
     return { kind: 'network', message: `The download failed${status ? ` (HTTP ${status})` : ''}. Try again in a moment.` };

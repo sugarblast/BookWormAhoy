@@ -28,6 +28,7 @@ export function localBook(record) {
   const book = {
     id: `local:${record.id}`,
     source: 'local',
+    origin: record.origin || 'device',
     fileId: record.id,
     name: record.name,
     title: titleFromName(record.name),

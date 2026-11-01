@@ -3,10 +3,15 @@
 import { clear, createMenu, debounce, formatBytes, formatRelative, h, hashString, toast } from '../lib/dom.js';
 import { icon } from '../lib/icons.js';
 import { currentTheme, nextTheme, setTheme, settings, THEME_LABELS } from '../lib/settings.js';
-import { AuthError, connect, disconnect, ensureToken, getAuthStatus, onAuthChange, preloadGis } from '../lib/auth.js';
-import { getClientId, looksLikeClientId, saveClientId } from '../config.js';
-import { getAccount, listPdfs } from '../lib/drive.js';
-import { bookCache, bookFromProgress, bookHref, localBook } from '../lib/books.js';
+import { connect, disconnect, ensureToken, getAuthStatus, onAuthChange, preloadGis } from '../lib/auth.js';
+import { isDriveConfigured, isDropboxConfigured } from '../config.js';
+import { getAccount } from '../lib/drive.js';
+import { pickPdfs, preloadPicker } from '../lib/picker.js';
+import { chooseFromDropbox, downloadFromDropbox, preloadDropbox } from '../lib/dropbox.js';
+import { assertRoom } from '../lib/storage.js';
+import { openAddDialog } from './addDialog.js';
+import { createStorageMeter } from './storageMeter.js';
+import { bookCache, bookFromProgress, bookHref, driveBook, localBook } from '../lib/books.js';
 import { db } from '../lib/db.js';
 import { fractionRead, isStarted, loadAllProgress } from '../lib/progress.js';
 import { forgetCover, requestCover } from '../lib/covers.js';
@@ -126,10 +131,9 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     progress: new Map(),
     query: '',
     sort: settings.get('sort'),
-    loading: false,
-    driveError: null,
     authProblem: false,
     account: null,
+    transfer: null,
   };
   let destroyed = false;
   let scrollRestored = false;
@@ -152,7 +156,8 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   }
 
   const accountButton = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Google Drive account' });
-  const accountHost = h('div', { class: 'relative' }, accountButton);
+  // Nothing to connect to unless Google Drive was switched on when the site was built.
+  const accountHost = h('div', { class: 'relative', hidden: !isDriveConfigured() }, accountButton);
   function renderAccountButton() {
     const initial = state.account?.displayName?.trim()?.[0]?.toUpperCase();
     accountButton.replaceChildren(
@@ -169,20 +174,21 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       if (status === 'signed-in') {
         return [
           { note: state.account?.emailAddress ?? 'Google Drive connected' },
-          { label: 'Refresh library', onSelect: () => refreshDrive() },
+          { label: 'Add from Google Drive…', onSelect: () => openFromDrive() },
           { label: 'Switch account', onSelect: () => doConnect({ chooseAccount: true }) },
           { separator: true },
-          { label: 'Disconnect Google Drive', onSelect: doDisconnect },
+          { label: 'Disconnect', onSelect: () => doDisconnect() },
+          { label: 'Disconnect and revoke access', onSelect: () => doDisconnect({ revoke: true }) },
         ];
       }
       if (status === 'expired') {
         return [
           { label: 'Reconnect Google Drive', onSelect: () => doConnect() },
           { separator: true },
-          { label: 'Forget this connection', onSelect: doDisconnect },
+          { label: 'Forget this connection', onSelect: () => doDisconnect() },
         ];
       }
-      return [{ label: 'Connect Google Drive', onSelect: () => doConnect() }];
+      return [{ label: 'Add from Google Drive…', onSelect: () => openFromDrive() }];
     },
   });
 
@@ -241,25 +247,26 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
   const bannerSlot = h('div', { class: 'empty:hidden' });
   const contentSlot = h('div');
-  const fileInput = h('input', {
-    type: 'file',
-    accept: 'application/pdf,.pdf',
-    multiple: true,
-    class: 'hidden',
-    onchange: async () => {
-      const files = [...fileInput.files];
-      fileInput.value = '';
-      await addLocalFiles(files);
-    },
-  });
-
   const main = h(
     'main',
     { class: 'mx-auto w-full max-w-[1400px] px-4 pb-24 pt-6 sm:px-8' },
     bannerSlot,
     contentSlot,
-    fileInput,
   );
+
+  // Dropping PDFs anywhere on the shelf adds them.
+  const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes('Files');
+  main.addEventListener('dragover', (event) => {
+    if (hasFiles(event)) event.preventDefault();
+  });
+  main.addEventListener('drop', (event) => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    addLocalFiles([...event.dataTransfer.files]);
+  });
+
+  const meter = createStorageMeter();
+  const refreshMeter = debounce(() => !destroyed && meter.refresh(), 250);
   root.replaceChildren(header, main);
   renderThemeButton();
   renderAccountButton();
@@ -288,86 +295,122 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   }
 
   async function init() {
-    const [progress, , cached] = await Promise.all([
+    const [progress, , saved] = await Promise.all([
       loadAllProgress(),
       readLocal(),
-      db.get('meta', 'driveList').catch(() => null),
+      db.get('meta', 'driveBooks').catch(() => null),
     ]);
     if (destroyed) return;
     state.progress = progress;
-    if (cached?.books) {
-      for (const book of cached.books) bookCache.set(book.id, book);
-      state.drive = cached.books;
-    }
+    state.drive = (saved?.files ?? []).map(driveBook);
     state.ready = true;
     render();
-    if (getAuthStatus() !== 'signed-out') refreshDrive();
+    db.delete('meta', 'driveList').catch(() => {}); // cache from the old "list the whole Drive" design
     preloadGis();
-  }
-
-  let refreshing = false;
-  async function refreshDrive() {
-    if (refreshing || destroyed) return;
-    refreshing = true;
-    state.loading = true;
-    state.driveError = null;
-    renderContent();
-    try {
-      await ensureToken();
-      const books = await listPdfs({
-        onPage: (partial) => {
-          if (destroyed) return;
-          state.drive = partial;
-          scheduleRender();
-        },
-      });
-      state.drive = books;
-      state.authProblem = false;
-      db.put('meta', { id: 'driveList', books, savedAt: Date.now() }).catch(() => {});
-      getAccount()
-        .then((account) => {
-          state.account = account;
-          if (!destroyed) renderAccountButton();
-        })
-        .catch(() => {});
-    } catch (error) {
-      if (error instanceof AuthError) state.authProblem = true;
-      else state.driveError = error?.message ?? 'Could not load your Drive.';
-    } finally {
-      state.loading = false;
-      refreshing = false;
-      if (!destroyed) {
-        render();
-      }
+    if (getAuthStatus() === 'signed-in') {
+      preloadPicker();
+      loadAccount();
     }
   }
 
-  const scheduleRender = debounce(() => !destroyed && renderContent(), 150);
+  function loadAccount() {
+    getAccount()
+      .then((account) => {
+        state.account = account;
+        if (!destroyed) renderAccountButton();
+      })
+      .catch(() => {});
+  }
+
+  function saveDriveBooks() {
+    const files = state.drive.map((book) => ({ id: book.fileId, name: book.name, size: book.size, modifiedTime: book.modified }));
+    return db.put('meta', { id: 'driveBooks', files, savedAt: Date.now() }).catch(() => {});
+  }
+
+  let picking = false;
+  /** "Open from Google Drive": sign in if needed, show Google's picker, put the chosen PDFs on the shelf. */
+  async function openFromDrive() {
+    if (picking || destroyed || !isDriveConfigured()) return;
+    picking = true;
+    try {
+      let token;
+      if (getAuthStatus() === 'signed-in') {
+        token = await ensureToken({ minTtlMs: 120_000 });
+      } else {
+        await connect();
+        state.authProblem = false;
+        token = await ensureToken({ minTtlMs: 120_000 });
+        loadAccount();
+      }
+      const files = await pickPdfs({ token });
+      if (destroyed || !files.length) return;
+      const shelf = new Map(state.drive.map((book) => [book.fileId, book]));
+      const before = shelf.size;
+      for (const file of files) shelf.set(file.id, driveBook(file));
+      state.drive = [...shelf.values()];
+      await saveDriveBooks();
+      render();
+      const added = shelf.size - before;
+      toast(added ? `Added ${added === 1 ? '1 PDF' : `${added} PDFs`} from Google Drive.` : 'Those PDFs are already on your shelf.');
+    } catch (error) {
+      toast(error?.message ?? 'Could not open the Google Drive picker.', { kind: 'error' });
+    } finally {
+      picking = false;
+    }
+  }
 
   async function doConnect({ chooseAccount = false } = {}) {
-    if (!getClientId()) {
-      renderContent();
-      return;
-    }
+    if (!isDriveConfigured()) return;
     try {
       await connect({ chooseAccount });
       state.authProblem = false;
       toast('Connected to Google Drive.');
-      await refreshDrive();
+      loadAccount();
+      render();
     } catch (error) {
       toast(error?.message ?? 'Could not connect to Google Drive.', { kind: 'error' });
     }
   }
 
-  async function doDisconnect() {
-    await disconnect();
-    state.drive = [];
+  async function doDisconnect({ revoke = false } = {}) {
+    if (revoke && !window.confirm('Cancel Bookworm\'s access to your Google account? Your books stay on the shelf, but you will have to pick the Drive files again.')) return;
+    await disconnect({ revoke });
     state.account = null;
     state.authProblem = false;
-    db.delete('meta', 'driveList').catch(() => {});
     renderAccountButton();
     render();
-    toast('Disconnected from Google Drive.');
+    toast(revoke ? 'Access revoked and disconnected from Google Drive.' : 'Disconnected from Google Drive.');
+  }
+
+  function openAdd() {
+    openAddDialog({
+      sources: { drive: isDriveConfigured(), dropbox: isDropboxConfigured() },
+      onFiles: (files) => addLocalFiles(files),
+      onDrive: () => openFromDrive(),
+      onDropbox: () => openFromDropbox(),
+      onOpen: () => {
+        if (isDropboxConfigured()) preloadDropbox().catch(() => {}); // so its window can open inside the click
+      },
+    });
+  }
+
+  /** Copies PDFs into this browser's storage, refusing any that clearly will not fit. */
+  async function storeFiles(entries, origin) {
+    let added = 0;
+    for (const { name, size, blob } of entries) {
+      try {
+        await assertRoom(size, name);
+        await db.put('files', { id: crypto.randomUUID(), name, size, blob, addedAt: Date.now(), origin });
+        added++;
+      } catch (error) {
+        toast(error?.name === 'StorageFullError' ? error.message : `Could not store ${name}. Your browser may be out of space.`, { kind: 'error', timeout: 9000 });
+      }
+    }
+    if (added) {
+      await readLocal();
+      if (!destroyed) render();
+    }
+    return added;
   }
 
   async function addLocalFiles(files) {
@@ -376,29 +419,67 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       toast('Choose one or more PDF files.', { kind: 'error' });
       return;
     }
+    const added = await storeFiles(pdfs.map((file) => ({ name: file.name, size: file.size, blob: file })), 'device');
+    if (added) toast(added === 1 ? 'Added 1 PDF to this browser.' : `Added ${added} PDFs to this browser.`);
+  }
+
+  let transferring = false;
+  /** Dropbox's window, then each chosen PDF is downloaded into this browser. */
+  async function openFromDropbox() {
+    if (transferring || destroyed || !isDropboxConfigured()) return;
+    let chosen;
+    try {
+      chosen = await chooseFromDropbox();
+    } catch (error) {
+      toast(error?.message ?? 'Could not open Dropbox.', { kind: 'error' });
+      return;
+    }
+    if (!chosen.length) return;
+    transferring = true;
     let added = 0;
-    for (const file of pdfs) {
-      try {
-        await db.put('files', { id: crypto.randomUUID(), name: file.name, size: file.size, blob: file, addedAt: Date.now() });
-        added++;
-      } catch {
-        toast(`Could not store ${file.name}. Your browser may be out of space.`, { kind: 'error' });
+    try {
+      for (const [index, file] of chosen.entries()) {
+        state.transfer = { name: file.name, index: index + 1, total: chosen.length, fraction: 0 };
+        renderBanner();
+        try {
+          if (file.bytes) await assertRoom(file.bytes, file.name);
+          const blob = await downloadFromDropbox(file, {
+            onProgress: (fraction) => {
+              state.transfer = { ...state.transfer, fraction };
+              renderBanner();
+            },
+          });
+          added += await storeFiles([{ name: file.name, size: blob.size, blob }], 'dropbox');
+        } catch (error) {
+          toast(`${file.name}: ${error?.message ?? 'could not be saved.'}`, { kind: 'error', timeout: 9000 });
+        }
       }
+    } finally {
+      state.transfer = null;
+      transferring = false;
+      renderBanner();
     }
-    if (added) {
-      await readLocal();
-      if (!destroyed) render();
-      toast(added === 1 ? 'Added 1 PDF to this browser.' : `Added ${added} PDFs to this browser.`);
-    }
+    if (added) toast(added === 1 ? 'Saved 1 PDF from Dropbox to this browser.' : `Saved ${added} PDFs from Dropbox to this browser.`);
   }
 
   async function removeLocal(book) {
-    const ok = window.confirm(`Remove "${book.title}" from this browser? The original file on your device is not touched.`);
+    const ok = window.confirm(`Remove "${book.title}" from this browser? ${book.origin === 'dropbox' ? 'The original stays in your Dropbox.' : 'The original file on your device is not touched.'}`);
     if (!ok) return;
     await Promise.allSettled([db.delete('files', book.fileId), db.delete('progress', book.id), forgetCover(book.id)]);
     state.progress.delete(book.id);
     bookCache.delete(book.id);
     await readLocal();
+    if (!destroyed) render();
+  }
+
+  async function removeDrive(book) {
+    const ok = window.confirm(`Take "${book.title}" off your shelf? The file stays in your Google Drive.`);
+    if (!ok) return;
+    await Promise.allSettled([db.delete('progress', book.id), forgetCover(book.id)]);
+    state.progress.delete(book.id);
+    bookCache.delete(book.id);
+    state.drive = state.drive.filter((item) => item.id !== book.id);
+    await saveDriveBooks();
     if (!destroyed) render();
   }
 
@@ -432,7 +513,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
     const meta = isStarted(record)
       ? `Page ${record.page} of ${record.numPages}`
-      : [book.source === 'local' ? 'This device' : null, formatBytes(book.size)].filter(Boolean).join(', ');
+      : [book.source === 'local' ? (book.origin === 'dropbox' ? 'From Dropbox' : 'This device') : null, formatBytes(book.size)].filter(Boolean).join(', ');
     const link = h(
       'a',
       { class: 'book-link', href: bookHref(book) },
@@ -442,20 +523,19 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       showOpened && record ? h('div', { class: 'book-meta' }, `Opened ${formatRelative(record.updatedAt)}`) : null,
     );
     const item = h('div', { class: 'book' }, link);
-    if (book.source === 'local') {
-      item.append(
-        h(
-          'button',
-          {
-            class: 'book-remove',
-            type: 'button',
-            'aria-label': `Remove ${book.title} from this browser`,
-            onclick: () => removeLocal(book),
-          },
-          icon('x', 'size-4'),
-        ),
-      );
-    }
+    const local = book.source === 'local';
+    item.append(
+      h(
+        'button',
+        {
+          class: 'book-remove',
+          type: 'button',
+          'aria-label': local ? `Remove ${book.title} from this browser` : `Take ${book.title} off the shelf`,
+          onclick: () => (local ? removeLocal(book) : removeDrive(book)),
+        },
+        icon('x', 'size-4'),
+      ),
+    );
     return item;
   }
 
@@ -470,26 +550,28 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
   function renderBanner() {
     if (destroyed) return;
-    const status = getAuthStatus();
-    const hasLocalOnly = status === 'signed-out' && (state.local.length > 0 || state.progress.size > 0);
-    let banner = null;
-    if (state.authProblem || status === 'expired') {
-      banner = [
-        'Your Google Drive session timed out. Covers and books from Drive cannot load until you reconnect.',
-        'Reconnect Google Drive',
-      ];
-    } else if (hasLocalOnly && getClientId()) {
-      banner = ['Connect Google Drive to list the PDFs you keep there.', 'Connect Google Drive'];
-    }
+    const hasDriveBooks = state.drive.length > 0 || [...state.progress.keys()].some((id) => id.startsWith('drive:'));
+    const needsReconnect = hasDriveBooks && (state.authProblem || getAuthStatus() === 'expired');
+    const transfer = state.transfer;
     bannerSlot.replaceChildren(
-      ...(banner
+      ...(transfer
+        ? [
+            h(
+              'div',
+              { class: 'mb-8 rounded-lg border border-line bg-surface px-4 py-3', role: 'status' },
+              h('p', { class: 'truncate text-sm' }, `Saving from Dropbox (${transfer.index} of ${transfer.total}): ${transfer.name}`),
+              h('div', { class: 'meter-track mt-2' }, h('div', { class: 'transfer-fill', style: { width: `${Math.round(transfer.fraction * 100)}%` } })),
+            ),
+          ]
+        : []),
+      ...(needsReconnect
         ? [
             h(
               'div',
               { class: 'mb-8 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border border-line bg-surface px-4 py-3', role: 'status' },
               icon('alert', 'size-5 text-accent'),
-              h('p', { class: 'min-w-0 flex-1 text-sm' }, banner[0]),
-              h('button', { class: 'btn btn-primary', type: 'button', onclick: () => doConnect() }, banner[1]),
+              h('p', { class: 'min-w-0 flex-1 text-sm' }, 'Your Google Drive session timed out. Covers and books from Drive cannot load until you reconnect.'),
+              h('button', { class: 'btn btn-primary', type: 'button', onclick: () => doConnect() }, 'Reconnect Google Drive'),
             ),
           ]
         : []),
@@ -497,87 +579,19 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   }
 
   function hero() {
-    const demo = [
-      { id: 'demo:1', title: 'Middlemarch' },
-      { id: 'demo:2', title: 'Moby-Dick' },
-      { id: 'demo:3', title: 'The Odyssey' },
-    ];
-    const placement = [
-      { left: '2%', top: '12%', width: '44%', transform: 'rotate(-7deg)' },
-      { left: '28%', top: '2%', width: '46%', transform: 'rotate(2deg)' },
-      { left: '52%', top: '16%', width: '44%', transform: 'rotate(8deg)' },
-    ];
-    const stack = h(
-      'div',
-      { class: 'relative mx-auto w-full max-w-md', style: { aspectRatio: '1 / 0.92' }, 'aria-hidden': 'true' },
-      demo.map((book, i) => {
-        const { cover } = bookCover(book, i === 1 ? { page: 140, numPages: 320 } : null);
-        Object.assign(cover.style, { position: 'absolute', ...placement[i] });
-        return cover;
-      }),
-    );
-
-    const canConnect = Boolean(getClientId());
-    const idInput = h('input', {
-      class: 'field w-full',
-      placeholder: '1234567890-abc123.apps.googleusercontent.com',
-      'aria-label': 'Google OAuth client ID',
-      autocomplete: 'off',
-      spellcheck: 'false',
-    });
-    const setup = h(
-      'form',
-      {
-        class: 'mt-8 max-w-lg rounded-lg border border-line bg-surface p-4',
-        onsubmit: (event) => {
-          event.preventDefault();
-          if (!looksLikeClientId(idInput.value)) {
-            toast('That does not look like a client ID. It ends in .apps.googleusercontent.com.', { kind: 'error' });
-            return;
-          }
-          saveClientId(idInput.value);
-          preloadGis();
-          renderContent();
-          doConnect();
-        },
-      },
-      h('p', { class: 'text-sm' }, 'To connect Drive, Bookworm needs a Google OAuth client ID. Create one in Google Cloud Console (the README has the steps), then paste it here. It stays in this browser.'),
-      h('div', { class: 'mt-3 flex flex-col gap-2 sm:flex-row' }, idInput, h('button', { class: 'btn btn-primary', type: 'submit' }, 'Save and connect')),
-    );
+    const names = ['this device', isDriveConfigured() ? 'Google Drive' : null, isDropboxConfigured() ? 'Dropbox' : null].filter(Boolean);
+    const sourcesText = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names.at(-1)}` : names[0];
 
     return h(
       'section',
-      { class: 'grid items-center gap-12 py-10 md:grid-cols-[1.1fr_1fr] md:py-20' },
+      { class: 'mx-auto max-w-2xl py-16 md:py-28' },
+      h('h1', { class: 'max-w-[16ch] font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl' }, 'Read your PDFs like books.'),
       h(
-        'div',
-        null,
-        h('h1', { class: 'max-w-[16ch] font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl' }, 'Read your Drive PDFs like books.'),
-        h(
-          'p',
-          { class: 'mt-5 max-w-[46ch] text-lg text-muted' },
-          'Bookworm lists the PDFs in your Google Drive with a cover for each, remembers your page, and opens them in a calm reader with a table of contents. It runs entirely in this browser tab, with no Bookworm server in between.',
-        ),
-        h(
-          'div',
-          { class: 'mt-8 flex flex-wrap gap-3' },
-          canConnect
-            ? h('button', { class: 'btn btn-primary', type: 'button', onclick: () => doConnect() }, icon('cloud', 'size-4'), 'Connect Google Drive')
-            : null,
-          h('button', { class: 'btn btn-quiet', type: 'button', onclick: () => fileInput.click() }, icon('upload', 'size-4'), 'Open a PDF from this device'),
-        ),
-        canConnect ? h('p', { class: 'mt-4 text-sm text-muted' }, 'Read-only access to your Drive. Disconnect any time from the account menu.') : setup,
+        'p',
+        { class: 'mt-5 max-w-[46ch] text-lg text-muted' },
+        `Add PDFs from ${sourcesText}. Bookworm gives each one a cover, remembers your page, and opens it in a calm reader with a table of contents. It runs entirely in this browser tab, with no Bookworm server in between.`,
       ),
-      stack,
-    );
-  }
-
-  function skeleton() {
-    return h(
-      'div',
-      { class: 'shelf', 'aria-hidden': 'true' },
-      Array.from({ length: 12 }, () =>
-        h('div', null, h('div', { class: 'aspect-[2/3] animate-pulse rounded-[2px_6px_6px_2px] bg-line/70' }), h('div', { class: 'mt-3 h-4 w-3/4 animate-pulse rounded bg-line/70' })),
-      ),
+      h('div', { class: 'mt-8' }, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openAdd() }, icon('plus', 'size-4'), 'Add books')),
     );
   }
 
@@ -595,9 +609,8 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     if (destroyed || !state.ready) return;
     loader.reset();
 
-    const status = getAuthStatus();
     const hasAnything = allBooks().length > 0 || state.progress.size > 0;
-    if (!hasAnything && !state.loading && status === 'signed-out') {
+    if (!hasAnything) {
       contentSlot.replaceChildren(hero());
       return;
     }
@@ -630,29 +643,23 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     const actions = h(
       'div',
       { class: 'flex items-center gap-2' },
-      state.loading ? h('span', { class: 'mr-1 flex items-center gap-2 text-sm text-muted', role: 'status' }, h('span', { class: 'spinner', style: { width: '1rem', height: '1rem' } }), 'Loading Drive') : null,
-      h('button', { class: 'btn btn-quiet', type: 'button', onclick: () => fileInput.click() }, icon('upload', 'size-4'), 'Add from device'),
-      status === 'signed-in'
-        ? h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Refresh library', title: 'Refresh library', onclick: () => refreshDrive() }, icon('refresh', 'size-4'))
-        : null,
+      h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openAdd() }, icon('plus', 'size-4'), 'Add books'),
     );
     const count = books.length === 1 ? '1 PDF' : `${books.length} PDFs`;
 
     let body;
-    if (state.driveError && !allBooks().length) {
-      body = emptyMessage('Could not load your Drive', state.driveError, h('button', { class: 'btn btn-primary mt-6', type: 'button', onclick: () => refreshDrive() }, 'Try again'));
-    } else if (!books.length && state.loading) {
-      body = skeleton();
-    } else if (!books.length && searching) {
+    if (!books.length && searching) {
       body = emptyMessage(`No PDFs match "${state.query}"`, 'Check the spelling, or search for a different word from the title.', h('button', { class: 'btn btn-quiet mt-6', type: 'button', onclick: () => { searchInput.value = ''; state.query = ''; renderContent(); } }, 'Clear search'));
     } else if (!books.length) {
-      body = emptyMessage('No PDFs found in your Drive', 'Upload a PDF to Google Drive and refresh, or open one from this device.', h('button', { class: 'btn btn-primary mt-6', type: 'button', onclick: () => fileInput.click() }, icon('upload', 'size-4'), 'Open a PDF from this device'));
+      body = emptyMessage('Your shelf is empty', 'Use Add books to bring in PDFs.');
     } else {
       body = h('div', { class: 'shelf' }, books.map((book) => bookItem(book)));
     }
 
-    sections.push(h('section', { 'aria-label': 'Library' }, heading('Library', { count, actions }), state.driveError && allBooks().length ? h('p', { class: 'mb-4 text-sm text-muted', role: 'status' }, `Showing saved results. ${state.driveError}`) : null, body));
+    sections.push(h('section', { 'aria-label': 'Library' }, heading('Library', { count, actions }), body));
+    sections.push(h('section', { class: 'mt-16 max-w-xl', 'aria-label': 'Storage' }, meter.el));
     contentSlot.replaceChildren(...sections);
+    refreshMeter();
   }
 
   function render() {
@@ -670,9 +677,10 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   return function destroy() {
     destroyed = true;
     loader.destroy();
+    meter.destroy();
+    refreshMeter.cancel();
     unsubscribeAuth();
     document.removeEventListener('keydown', onKeydown);
-    scheduleRender.cancel();
     clear(root);
   };
 }
