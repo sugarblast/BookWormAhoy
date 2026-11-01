@@ -162,6 +162,23 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* Footer links (Privacy Policy, Terms of Service) */
+.legal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2rem; /* comfortable tap target on phones */
+  border-radius: 0.25rem;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+  text-underline-offset: 0.25em;
+}
+
+.legal-link:hover {
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}
+
 .field {
   height: 2.5rem;
   border: 1px solid var(--line);

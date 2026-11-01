@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Terms of Service for Bookworm, a free, open-source PDF reader that runs entirely in your browser.">
+  <title>Terms of Service · Bookworm</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #f7f3ea;
+      --surface: #fffdf8;
+      --text: #1d2433;
+      --muted: #5b6475;
+      --rule: #e3dccb;
+      --gold: #9a6b00;
+      --link: #0b5c8a;
+      --accent-bg: #fbf1d3;
+      --accent-line: #c8962b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1624;
+        --surface: #151e30;
+        --text: #e8e6df;
+        --muted: #a2abbb;
+        --rule: #26324a;
+        --gold: #e0b34a;
+        --link: #7cc4ee;
+        --accent-bg: #1d2538;
+        --accent-line: #c8962b;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 1.0625rem/1.65 Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    }
+    .wrap { max-width: 44rem; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+    a { color: var(--link); text-underline-offset: 0.15em; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible { outline: 3px solid var(--accent-line); outline-offset: 2px; border-radius: 2px; }
+    .back {
+      display: inline-block;
+      margin: 0.25rem 0 1.5rem;
+      font: 600 0.95rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-decoration: none;
+    }
+    .back:hover { text-decoration: underline; }
+    header { border-bottom: 2px solid var(--accent-line); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    .eyebrow {
+      margin: 0 0 0.35rem;
+      color: var(--gold);
+      font: 700 0.78rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0 0 0.5rem; font-size: clamp(1.9rem, 6vw, 2.5rem); line-height: 1.15; letter-spacing: -0.01em; }
+    .meta { margin: 0; color: var(--muted); font: 0.9rem/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    h2 {
+      margin: 2.5rem 0 0.6rem;
+      padding-top: 0.25rem;
+      font-size: 1.45rem;
+      line-height: 1.25;
+    }
+    h2::before { content: "⚓ "; color: var(--gold); font-size: 0.9em; }
+    p, ul { margin: 0.7rem 0; }
+    ul { padding-left: 1.3rem; }
+    li { margin: 0.35rem 0; }
+    li::marker { color: var(--gold); }
+    .summary {
+      margin: 0 0 2rem;
+      padding: 1rem 1.15rem;
+      background: var(--accent-bg);
+      border-left: 4px solid var(--accent-line);
+      border-radius: 0 8px 8px 0;
+    }
+    .summary p { margin: 0.2rem 0; }
+    .summary strong:first-child { color: var(--gold); }
+    .notice {
+      padding: 0.95rem 1.15rem;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+    }
+    .notice p { margin: 0; }
+    .caps { text-transform: uppercase; font-size: 0.95rem; letter-spacing: 0.01em; }
+    code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--muted); font: 0.9rem/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    footer p { margin: 0.4rem 0; }
+    @media print { body { background: #fff; color: #000; } a { color: #000; } .back { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="https://sugarblast.github.io/BookWormAhoy/">← Back to Bookworm</a>
+
+    <header>
+      <p class="eyebrow">Bookworm · Ship's Articles</p>
+      <h1>Terms of Service</h1>
+      <p class="meta">Last updated: November 1, 2026</p>
+    </header>
+
+    <div class="summary" role="note">
+      <p><strong>The short version, matey:</strong> Bookworm is a free reader for your own PDFs. Your files stay yours and stay in your browser or your own cloud account. The app is provided as it is, with no warranty, so keep your original files safe.</p>
+    </div>
+
+    <main>
+      <h2 id="agreement">Agreement to These Terms</h2>
+      <p>These Terms of Service ("Terms") govern your use of Bookworm, a free, open-source PDF reader available at <a href="https://sugarblast.github.io/BookWormAhoy/">sugarblast.github.io/BookWormAhoy</a> (the "App"). By opening or using the App you agree to these Terms. If you don't agree, please don't use it.</p>
+      <p>Our <a href="privacy.html">Privacy Policy</a> explains what the App does with information and forms part of these Terms.</p>
+
+      <h2 id="the-app">What Bookworm Is</h2>
+      <p>Bookworm is a client-side web application: it runs entirely in your web browser and is served as static files from GitHub Pages. It has no accounts, no backend server and no database. It lets you open PDF files from your own device, or from your own Google Drive or Dropbox, and read them in a book-like reader.</p>
+
+      <h2 id="your-files">Your Files and Content</h2>
+      <ul>
+        <li><strong>You keep everything.</strong> You retain all ownership of, and rights in, the files you open with Bookworm. These Terms give us no ownership of, and no license to use, your files.</li>
+        <li><strong>Local, client-side processing.</strong> Your files are read, rendered and searched inside your own browser. Bookworm does not upload them to us or to any server we run, because no such server exists.</li>
+        <li><strong>You are responsible for your files.</strong> Only open files you have the right to read. You are responsible for making sure that your use of any file, including copyrighted material, complies with the law and with the terms of wherever you got it. Bookworm does not search for, supply or host any books.</li>
+      </ul>
+
+      <h2 id="cloud-services">Google Drive and Dropbox</h2>
+      <p>Connecting a cloud service is optional. Bookworm only opens files you personally select, and it never changes or deletes anything in your cloud accounts. Your use of Google Drive and Dropbox remains subject to Google's and Dropbox's own terms and policies, and we are not responsible for those services, for their availability, or for what they do with your data. You can disconnect Bookworm at any time from the app, or in your <a href="https://myaccount.google.com/permissions">Google Account permissions</a>.</p>
+
+      <h2 id="local-data">Data Stored in Your Browser</h2>
+      <p>Bookworm keeps books you add from your device or Dropbox, reading progress and settings in your browser's local storage. That data lives only on your device. Browsers can clear it at any time, for example when you clear site data, use a private window, or run low on space, and we cannot recover it for you. <strong>Keep your original files somewhere safe.</strong> Treat Bookworm's saved copies as a convenience, not as a backup.</p>
+
+      <h2 id="acceptable-use">Acceptable Use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>use the App to break the law or to infringe anyone's rights;</li>
+        <li>try to disrupt, attack or overload the App, GitHub Pages, Google or Dropbox;</li>
+        <li>use the App to gain, or try to gain, access to anyone else's files or accounts.</li>
+      </ul>
+
+      <h2 id="warranty">No Warranty</h2>
+      <div class="notice">
+        <p class="caps">Bookworm is provided "as is" and "as available", without warranties of any kind, express or implied, including any warranty of merchantability, fitness for a particular purpose, accuracy, non-infringement, or uninterrupted or error-free operation.</p>
+      </div>
+      <p>PDF files vary widely, and some may display incorrectly or not open at all. The App depends on your browser, on GitHub Pages, and on third-party services such as Google and Dropbox, and any of them may change or fail without notice.</p>
+
+      <h2 id="liability">Limitation of Liability</h2>
+      <p class="caps">To the fullest extent permitted by law, the author and contributors of Bookworm will not be liable for any indirect, incidental, special, consequential or punitive damages, or for any loss of data, files, reading progress, profits or goodwill, arising from your use of, or inability to use, the App. Because the App is free, any total liability will not exceed zero dollars (US $0), except where the law does not allow that limit.</p>
+      <p>Some places do not allow certain disclaimers or limits, so parts of this section may not apply to you.</p>
+
+      <h2 id="open-source">Open Source</h2>
+      <p>Bookworm's source code is published in the project's public repository at <a href="https://github.com/sugarblast/BookWormAhoy">github.com/sugarblast/BookWormAhoy</a>. Any license for the code is stated there. These Terms cover your use of the hosted App.</p>
+
+      <h2 id="changes">Changes, Availability and Ending Use</h2>
+      <p>We may change, suspend or discontinue the App or any feature of it at any time, and we may update these Terms. When we do, we will change the "Last updated" date above. Continuing to use the App after a change means you accept the new Terms. You can stop using Bookworm whenever you like, and you can erase everything it stored by clearing this site's data in your browser settings.</p>
+
+      <h2 id="contact">Contact Information</h2>
+      <p>Questions about these Terms? Open an issue on the project's GitHub page:</p>
+      <ul>
+        <li><a href="https://github.com/sugarblast/BookWormAhoy/issues">github.com/sugarblast/BookWormAhoy/issues</a></li>
+        <li>Project owner: <a href="https://github.com/sugarblast">@sugarblast</a> on GitHub</li>
+      </ul>
+      <!-- To list an email address here, add: <li>Email: <a href="mailto:you@example.com">you@example.com</a></li> -->
+    </main>
+
+    <footer>
+      <p><a href="privacy.html">Privacy Policy</a></p>
+      <p><a href="https://sugarblast.github.io/BookWormAhoy/">← Back to Bookworm</a></p>
+    </footer>
+  </div>
+</body>
+</html>

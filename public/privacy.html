@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Privacy policy for Bookworm, a free, open-source PDF reader that runs entirely in your browser.">
+  <title>Privacy Policy · Bookworm</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #f7f3ea;
+      --surface: #fffdf8;
+      --text: #1d2433;
+      --muted: #5b6475;
+      --rule: #e3dccb;
+      --gold: #9a6b00;
+      --link: #0b5c8a;
+      --accent-bg: #fbf1d3;
+      --accent-line: #c8962b;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f1624;
+        --surface: #151e30;
+        --text: #e8e6df;
+        --muted: #a2abbb;
+        --rule: #26324a;
+        --gold: #e0b34a;
+        --link: #7cc4ee;
+        --accent-bg: #1d2538;
+        --accent-line: #c8962b;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 1.0625rem/1.65 Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    }
+    .wrap { max-width: 44rem; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+    a { color: var(--link); text-underline-offset: 0.15em; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible { outline: 3px solid var(--accent-line); outline-offset: 2px; border-radius: 2px; }
+    .back {
+      display: inline-block;
+      margin: 0.25rem 0 1.5rem;
+      font: 600 0.95rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-decoration: none;
+    }
+    .back:hover { text-decoration: underline; }
+    header { border-bottom: 2px solid var(--accent-line); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    .eyebrow {
+      margin: 0 0 0.35rem;
+      color: var(--gold);
+      font: 700 0.78rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0 0 0.5rem; font-size: clamp(1.9rem, 6vw, 2.5rem); line-height: 1.15; letter-spacing: -0.01em; }
+    .meta { margin: 0; color: var(--muted); font: 0.9rem/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    h2 {
+      margin: 2.5rem 0 0.6rem;
+      padding-top: 0.25rem;
+      font-size: 1.45rem;
+      line-height: 1.25;
+    }
+    h2::before { content: "⚓ "; color: var(--gold); font-size: 0.9em; }
+    h3 { margin: 1.6rem 0 0.4rem; font-size: 1.1rem; }
+    p, ul { margin: 0.7rem 0; }
+    ul { padding-left: 1.3rem; }
+    li { margin: 0.35rem 0; }
+    li::marker { color: var(--gold); }
+    .summary {
+      margin: 0 0 2rem;
+      padding: 1rem 1.15rem;
+      background: var(--accent-bg);
+      border-left: 4px solid var(--accent-line);
+      border-radius: 0 8px 8px 0;
+    }
+    .summary p { margin: 0.2rem 0; }
+    .summary strong:first-child { color: var(--gold); }
+    .notice {
+      padding: 0.95rem 1.15rem;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+    }
+    .notice p { margin: 0; }
+    table { width: 100%; border-collapse: collapse; margin: 0.9rem 0; font-size: 0.97rem; }
+    th, td { padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+    th { color: var(--muted); font: 600 0.8rem/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+    td:first-child { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88rem; }
+    .scroll { overflow-x: auto; }
+    code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    footer { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); color: var(--muted); font: 0.9rem/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    footer p { margin: 0.4rem 0; }
+    @media (max-width: 30rem) { td:first-child { white-space: normal; word-break: break-word; } }
+    @media print { body { background: #fff; color: #000; } a { color: #000; } .back { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="https://sugarblast.github.io/BookWormAhoy/">← Back to Bookworm</a>
+
+    <header>
+      <p class="eyebrow">Bookworm · Ship's Log</p>
+      <h1>Privacy Policy</h1>
+      <p class="meta">Last updated: November 1, 2026</p>
+    </header>
+
+    <div class="summary" role="note">
+      <p><strong>The short version, matey:</strong> Bookworm has no server and no database. Your books, your reading progress and your settings stay in your own browser. We don't collect, track, sell or store your personal data, and we don't run analytics.</p>
+    </div>
+
+    <main>
+      <h2 id="overview">Overview</h2>
+      <p>Bookworm is a free, open-source PDF reader that runs entirely in your web browser. It is a client-side single-page application hosted on GitHub Pages, built on a <em>Bring Your Own Storage</em> model: your books stay wherever you keep them (your device, your Google Drive or your Dropbox), and Bookworm only opens them for reading.</p>
+      <p>There is no Bookworm account, no sign-up, and no Bookworm backend. The site's author has no server that could receive, hold or look through your files, even if we wanted to.</p>
+      <p>This policy explains what the app does with information in your browser and what happens when you choose to connect Google Drive or Dropbox. The source code is public at <a href="https://github.com/sugarblast/BookWormAhoy">github.com/sugarblast/BookWormAhoy</a>, so you can check every claim here against the code.</p>
+
+      <h2 id="information-collection">Information Collection</h2>
+      <p><strong>We do not collect personal information.</strong> Specifically, Bookworm does not:</p>
+      <ul>
+        <li>collect, store or transmit your name, email address or any other personal data to us or to any server we operate (we don't operate one);</li>
+        <li>copy your books, or any file from your cloud accounts, to any server;</li>
+        <li>use analytics, advertising, tracking pixels, fingerprinting or third-party tracking cookies;</li>
+        <li>sell, rent, share or otherwise disclose your information to anyone.</li>
+      </ul>
+      <p><strong>Hosting.</strong> The site is served by GitHub Pages. Like any web host, GitHub may process technical request data such as your IP address and browser type when your browser loads the page, under <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's Privacy Statement</a>. Bookworm adds no analytics of its own, and its author does not receive this data. The fonts and the PDF engine the app uses are bundled with the site rather than fetched from third-party servers.</p>
+
+      <h2 id="cloud-apis">Google Drive &amp; Dropbox API Usage</h2>
+      <p>Connecting a cloud service is optional. Bookworm uses Google Drive and Dropbox for one purpose only: so you can select your own ebook files (PDFs) from your personal cloud accounts and read them in the app.</p>
+
+      <h3>Google Drive</h3>
+      <ul>
+        <li><strong>Narrow permission.</strong> Bookworm requests only the <code>https://www.googleapis.com/auth/drive.file</code> scope. With it, the app can open only the files you explicitly select in the Google Picker window. It cannot browse, list, search or read the rest of your Drive.</li>
+        <li><strong>Strictly client-side.</strong> Your browser talks to Google directly. Google sends the access token to your browser, and the browser sends it only to Google's servers (<code>googleapis.com</code>) to read the PDFs you chose. No Bookworm server sits in between, because none exists.</li>
+        <li><strong>Read-only use.</strong> Bookworm reads the files you select so it can show them to you on your own screen. It does not modify, upload, share or delete anything in your Drive.</li>
+        <li><strong>Nothing copied.</strong> Books opened from Drive are streamed to your browser for display. Bookworm remembers only the file's ID, name, size and modified date in your browser so your shelf can list it.</li>
+        <li><strong>Account display.</strong> After you sign in, Bookworm asks Google's Drive API for your display name and email address, only to show your initial and email in the account menu. This is held in memory for the visit and is not stored or sent anywhere else.</li>
+        <li><strong>Access token.</strong> The short-lived token (about one hour) is kept in your browser's local storage so a page reload doesn't sign you out. Choosing <em>Disconnect</em> removes it from your browser, and <em>Disconnect and revoke access</em> also tells Google to cancel it.</li>
+      </ul>
+
+      <h3 id="google-user-data-policy">Google API Services User Data Policy</h3>
+      <div class="notice">
+        <p>Bookworm's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+      </div>
+      <p>In practice, that means:</p>
+      <ul>
+        <li>Data received from Google is used only to provide the user-facing feature you asked for: reading the PDFs you picked.</li>
+        <li>It is never transferred to anyone else. It goes from Google to your browser and stays there.</li>
+        <li>It is never used for advertising, including retargeting or interest-based ads.</li>
+        <li>It is never sold, and never used to build or train any AI or machine-learning model.</li>
+        <li>No human reads it. Bookworm's author has no access to your Drive data, because it never reaches a server we control.</li>
+      </ul>
+      <p>You can withdraw Bookworm's access at any time from the app, or in your <a href="https://myaccount.google.com/permissions">Google Account permissions</a>.</p>
+
+      <h3>Dropbox</h3>
+      <ul>
+        <li>Bookworm uses the Dropbox Chooser, a window run by Dropbox where you pick the PDFs you want to open. The Chooser does not give Bookworm access to the rest of your Dropbox, and Bookworm does not keep a Dropbox sign-in or access token.</li>
+        <li>For each file you pick, Dropbox provides a temporary link. Your browser downloads the PDF directly from Dropbox and saves a copy in this browser's local storage so it opens quickly and works offline. Nothing is uploaded to a server we operate.</li>
+        <li>Bookworm never modifies or deletes anything in your Dropbox.</li>
+      </ul>
+
+      <h3>Third-party services</h3>
+      <p>When Google Drive is enabled on the site, your browser loads Google's sign-in script (<code>accounts.google.com</code>) when your shelf opens, and Google's file picker (<code>apis.google.com</code>) once you are signed in. Dropbox's Chooser script (<code>www.dropbox.com</code>) loads when you open the Add books window. Loading these scripts means Google and Dropbox can see your IP address and browser details, as with any website you visit, even if you never pick a file. What you do inside their windows is handled under their own policies: <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and <a href="https://www.dropbox.com/privacy">Dropbox Privacy Policy</a>.</p>
+
+      <h2 id="local-storage">Local Storage</h2>
+      <p>Everything Bookworm remembers lives in your browser, on your device, and is never synced or sent to us:</p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th scope="col">Where</th><th scope="col">What it holds</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>IndexedDB</td><td>PDFs you add from this device or Dropbox, generated cover thumbnails, your last-read page for each book, and the list of Drive files you picked (ID, name, size, date).</td></tr>
+            <tr><td>localStorage</td><td>Display settings (theme, page layout, zoom, sort order, sidebar), plus the short-lived Google Drive access token and a "connected" flag if you signed in.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Because this data stays in your browser, it is only as safe as your device and browser profile. Anything else that runs on the same site could in principle read local storage, which is why the production site ships a strict Content Security Policy.</p>
+
+      <h3>Your choices and deleting your data</h3>
+      <ul>
+        <li>Remove a book from the shelf in the app to delete its saved copy, cover and reading progress.</li>
+        <li>Use <em>Disconnect and revoke access</em> in the account menu to remove the Google token and cancel Bookworm's access.</li>
+        <li>Clear this site's data in your browser settings to erase everything Bookworm has stored. Private or incognito windows discard it when they close.</li>
+      </ul>
+      <p>We cannot see, recover or delete your data for you. It exists only on your device.</p>
+
+      <h2 id="changes">Changes to This Policy</h2>
+      <p>If Bookworm's behavior changes in a way that affects your privacy, this page will be updated and the "Last updated" date above will change. The full history is public in the project's repository.</p>
+
+      <h2 id="contact">Contact Information</h2>
+      <p>Questions about this policy or about how Bookworm handles data? Open an issue on the project's GitHub page:</p>
+      <ul>
+        <li><a href="https://github.com/sugarblast/BookWormAhoy/issues">github.com/sugarblast/BookWormAhoy/issues</a></li>
+        <li>Project owner: <a href="https://github.com/sugarblast">@sugarblast</a> on GitHub</li>
+      </ul>
+      <!-- To list an email address here, add: <li>Email: <a href="mailto:you@example.com">you@example.com</a></li> -->
+    </main>
+
+    <footer>
+      <p>Bookworm is a hobby project made by a bookworm, for bookworms. No treasure was harvested in the making of this policy.</p>
+      <p><a href="terms.html">Terms of Service</a></p>
+      <p><a href="https://sugarblast.github.io/BookWormAhoy/">← Back to Bookworm</a></p>
+    </footer>
+  </div>
+</body>
+</html>

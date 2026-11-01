@@ -249,9 +249,36 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   const contentSlot = h('div');
   const main = h(
     'main',
-    { class: 'mx-auto w-full max-w-[1400px] px-4 pb-24 pt-6 sm:px-8' },
+    { class: 'mx-auto w-full max-w-[1400px] px-4 pb-14 pt-6 sm:px-8' },
     bannerSlot,
     contentSlot,
+  );
+
+  // Legal pages ship with the site (public/privacy.html, public/terms.html). They open
+  // in a new tab so nothing about the shelf, an upload or a transfer is interrupted.
+  // BASE_URL keeps the link right on GitHub Pages (/<repo>/) and on localhost (/).
+  const legalLink = (file, label) =>
+    h(
+      'a',
+      {
+        class: 'legal-link',
+        href: `${import.meta.env.BASE_URL}${file}`,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      },
+      label,
+      icon('external', 'size-3.5'),
+      h('span', { class: 'sr-only' }, '(opens in a new tab)'),
+    );
+  const footer = h(
+    'footer',
+    { class: 'mx-auto w-full max-w-[1400px] px-4 pb-10 sm:px-8' },
+    h(
+      'nav',
+      { class: 'flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-line pt-4 text-sm text-muted', 'aria-label': 'Legal' },
+      legalLink('privacy.html', 'Privacy Policy'),
+      legalLink('terms.html', 'Terms of Service'),
+    ),
   );
 
   // Dropping PDFs anywhere on the shelf adds them.
@@ -267,7 +294,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
   const meter = createStorageMeter();
   const refreshMeter = debounce(() => !destroyed && meter.refresh(), 250);
-  root.replaceChildren(header, main);
+  root.replaceChildren(header, main, footer);
   renderThemeButton();
   renderAccountButton();
 
