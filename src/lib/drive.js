@@ -1,4 +1,6 @@
-// Minimal Google Drive v3 client (list PDFs, read metadata, build download URLs).
+// Minimal Google Drive v3 client (read metadata, build download URLs). Which files
+// exist on the shelf is decided by the Picker (picker.js); with the `drive.file`
+// scope Google only serves files the user picked.
 // Every request carries the access token from auth.js; a 401 drops the token
 // and retries once through the silent refresh path before asking the user to
 // reconnect.
@@ -41,36 +43,6 @@ async function driveFetch(path, params = {}, { signal } = {}, retried = false) {
 }
 
 const FILE_FIELDS = 'id,name,size,modifiedTime';
-
-/**
- * Lists every non-trashed PDF the user can see (own files and shared with them),
- * newest first. `onPage` receives the books found so far so the shelf can fill
- * in while later pages are still loading.
- */
-export async function listPdfs({ onPage, signal } = {}) {
-  const books = [];
-  let pageToken;
-  do {
-    const response = await driveFetch(
-      '/files',
-      {
-        q: "mimeType='application/pdf' and trashed=false",
-        fields: `nextPageToken,files(${FILE_FIELDS})`,
-        orderBy: 'modifiedTime desc',
-        pageSize: 200,
-        pageToken,
-        supportsAllDrives: true,
-        includeItemsFromAllDrives: true,
-      },
-      { signal },
-    );
-    const data = await response.json();
-    books.push(...(data.files ?? []).map(driveBook));
-    pageToken = data.nextPageToken;
-    onPage?.([...books]);
-  } while (pageToken);
-  return books;
-}
 
 export async function getFileMeta(fileId, { signal } = {}) {
   const response = await driveFetch(`/files/${encodeURIComponent(fileId)}`, {

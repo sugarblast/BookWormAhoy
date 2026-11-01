@@ -185,7 +185,11 @@ export function invalidateToken() {
   setToken(null);
 }
 
-export async function disconnect() {
+/**
+ * Forgets the sign-in on this device. With `revoke: true` Google is also told to
+ * cancel the app's access, which means files picked earlier must be picked again.
+ */
+export async function disconnect({ revoke: shouldRevoke = true } = {}) {
   const old = token?.access_token;
   try {
     localStorage.removeItem(CONNECTED_KEY);
@@ -194,7 +198,7 @@ export async function disconnect() {
   }
   setToken(null);
   const revoke = window.google?.accounts?.oauth2?.revoke;
-  if (old && revoke) {
+  if (shouldRevoke && old && revoke) {
     await Promise.race([
       new Promise((resolve) => revoke(old, () => resolve())),
       new Promise((resolve) => setTimeout(resolve, 3000)),
