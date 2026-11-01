@@ -86,6 +86,19 @@ Locally: put both in `.env.local` as `VITE_GOOGLE_CLIENT_ID=...` and `VITE_GOOGL
 
 Locally: `VITE_DROPBOX_APP_KEY=...` in `.env.local`. Leave it empty and the Dropbox tile is hidden.
 
+### Privacy policy and terms
+
+`public/privacy.html` and `public/terms.html` are single-file pages, published with the site at
+`https://<your-github-username>.github.io/<repo>/privacy.html` and `.../terms.html`. They are the
+pages to link from Google's **Branding** screen (Privacy policy and Terms of service links) when you
+move the app out of Testing. The shelf footer links to both (they open in a new tab, so a book, an
+upload or a transfer in progress is never interrupted); the links use `import.meta.env.BASE_URL`,
+so they are right on GitHub Pages and on localhost.
+
+If you change what the app stores or which hosts it talks to, update `privacy.html` and its
+"Last updated" date. Add your own email to the Contact section of either page if you want one
+listed (a comment shows where).
+
 ## Deploy to GitHub Pages
 
 1. Push this folder to a GitHub repository (default branch `main`).
@@ -108,6 +121,8 @@ index.html                  entry; theme bootstrap script; CSP placeholder
 vite.config.js              base './', Tailwind plugin, build-time CSP plugin
 build/csp.js                the Content-Security-Policy (shared by the build and tests)
 scripts/copy-pdfjs-assets.mjs   copies PDF.js cmaps/fonts/wasm into public/pdfjs
+public/privacy.html         the privacy policy page (served as /privacy.html)
+public/terms.html           the terms of service page (served as /terms.html)
 .github/workflows/deploy.yml    GitHub Pages deploy
 src/
   main.js                   hash router; lazy-loads the reader
