@@ -18,6 +18,9 @@ const clean = (value) => String(value ?? '').trim();
 /** OAuth client ID (VITE_GOOGLE_CLIENT_ID). */
 export const getClientId = () => clean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
+// TEMPORARY Cloudflare Pages build diagnostic. Remove after verifying the deploy.
+console.log('[Bookworm] VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
 /** API key for the Picker (VITE_GOOGLE_API_KEY); locked to this site's address in Cloud Console. */
 export const getApiKey = () => clean(import.meta.env.VITE_GOOGLE_API_KEY);
 
