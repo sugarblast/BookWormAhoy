@@ -75,3 +75,4 @@ App URLs: Set Homepage, Privacy Policy (/privacy.html), and Terms (/terms.html) 
 📜 License \& Privacy
 
 BookWormAhoy operates completely client-side without external tracking or databases. All stored PDFs and progress markers remain strictly inside the browser's IndexedDB storage.
+
