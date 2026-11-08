@@ -14,15 +14,18 @@
 export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 const clean = (value) => String(value ?? '').trim();
+const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+
+// TEMPORARY Cloudflare Pages build diagnostics. Remove after verifying the deploy.
+console.log('[Bookworm] VITE_GOOGLE_CLIENT_ID:', clientId);
+console.log('[Bookworm] VITE_GOOGLE_API_KEY:', apiKey);
 
 /** OAuth client ID (VITE_GOOGLE_CLIENT_ID). */
-export const getClientId = () => clean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
-
-// TEMPORARY Cloudflare Pages build diagnostic. Remove after verifying the deploy.
-console.log('[Bookworm] VITE_GOOGLE_CLIENT_ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
+export const getClientId = () => clean(clientId);
 
 /** API key for the Picker (VITE_GOOGLE_API_KEY); locked to this site's address in Cloud Console. */
-export const getApiKey = () => clean(import.meta.env.VITE_GOOGLE_API_KEY);
+export const getApiKey = () => clean(apiKey);
 
 /** Dropbox app key for the Chooser (VITE_DROPBOX_APP_KEY). Optional. */
 export const getDropboxKey = () => clean(import.meta.env.VITE_DROPBOX_APP_KEY);
