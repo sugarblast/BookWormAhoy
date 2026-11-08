@@ -17,10 +17,6 @@ const clean = (value) => String(value ?? '').trim();
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
-// TEMPORARY Cloudflare Pages build diagnostics. Remove after verifying the deploy.
-console.log('[Bookworm] VITE_GOOGLE_CLIENT_ID:', clientId);
-console.log('[Bookworm] VITE_GOOGLE_API_KEY:', apiKey);
-
 /** OAuth client ID (VITE_GOOGLE_CLIENT_ID). */
 export const getClientId = () => clean(clientId);
 
