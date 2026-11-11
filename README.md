@@ -7,8 +7,9 @@ it can be hosted as static files on Cloudflare Pages, GitHub Pages or any static
 server, no database, no analytics and no cookies of its own.
 
 - **Add books window**: tiles for This device, Google Drive and Dropbox, a drop
-  area, and a bar showing how much browser storage is left. Google Drive and
-  Dropbox tiles appear only when the site owner has set them up (below).
+  area, and a bar showing how much browser storage is left. The Dropbox tile
+  appears once the site owner has set it up (below). The Google Drive tile shows
+  **Coming soon** (disabled) until Drive is switched on with `VITE_GOOGLE_DRIVE=on`.
 - **Google Drive**: Google's own file picker; Bookworm can read only the files you pick,
   never the rest of your Drive. These books are not copied into the browser.
 - **Dropbox**: Dropbox's own file chooser; each chosen book is downloaded into this
@@ -69,6 +70,13 @@ spelling (names are case-sensitive), that they are *Variables* and not *Secrets*
 
 ### Google Drive (about ten minutes)
 
+**Switch.** Even with the keys below in place, Drive stays "Coming soon" (a disabled tile, no contact with
+Google, no cloud icon, saved Drive books hidden but not deleted) until the build has `VITE_GOOGLE_DRIVE=on`.
+That keeps it off while the OAuth app is still in Testing, when only your listed test users can sign in and
+everyone else would hit "Access blocked". To launch Drive: finish Google's verification, add
+`VITE_GOOGLE_DRIVE` = `on` next to the other variables, redeploy, and delete the "coming soon" notices in
+`public/privacy.html` and `public/terms.html`.
+
 Visitors never see Google Cloud. The site owner creates **one** OAuth client ID
 and **one** API key and builds them into the site. Everyone else opens
 **Add books**, chooses **Google Drive**, signs in with Google's normal "Allow
@@ -97,7 +105,7 @@ access?" screen and picks files.
    start of the client ID is your project number, which the picker needs, so it
    is read from the client ID and is not a third setting.
 
-Locally: put both in `.env.local` as `VITE_GOOGLE_CLIENT_ID=...` and `VITE_GOOGLE_API_KEY=...`.
+Locally: put them in `.env.local` as `VITE_GOOGLE_DRIVE=on`, `VITE_GOOGLE_CLIENT_ID=...` and `VITE_GOOGLE_API_KEY=...`.
 
 ### Dropbox (optional, about five minutes)
 
@@ -138,9 +146,10 @@ listed (a comment shows where). Google's verification review usually expects a w
 2. In Cloudflare: **Workers & Pages > Create > Pages > Connect to Git**, pick the repository.
 3. Build settings: framework preset **None** (or Vite), build command `npm run build`,
    output directory `dist`. Add the build variable `NODE_VERSION` = `22`.
-4. **Settings > Variables and Secrets > Build**: add `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY` and,
-   optionally, `VITE_DROPBOX_APP_KEY` as plain-text variables (they are public identifiers). They are read
-   when the site is built, so retry the deployment after changing one.
+4. **Settings > Variables and Secrets > Build**: add plain-text variables (they are public identifiers, not
+   secrets). `VITE_DROPBOX_APP_KEY` turns Dropbox on. Google Drive needs `VITE_GOOGLE_DRIVE` = `on` plus
+   `VITE_GOOGLE_CLIENT_ID` and `VITE_GOOGLE_API_KEY`; leave `VITE_GOOGLE_DRIVE` out and Drive stays
+   "Coming soon". They are read when the site is built, so retry the deployment after changing one.
 5. Open the `*.pages.dev` address (or attach a custom domain under **Custom domains**) and add it to
    the Google and Dropbox settings above.
 6. Leave **Web Analytics** off for the project. The privacy policy says there is no analytics, and the
