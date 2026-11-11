@@ -6,16 +6,19 @@ import '@fontsource-variable/literata';
 import '@fontsource-variable/hanken-grotesk';
 
 import { applyTheme } from './lib/settings.js';
-import { getApiKey, getClientId, isDriveConfigured, isDropboxConfigured } from './config.js';
+import { getApiKey, getClientId, isDriveConfigured, isDriveSwitchedOn, isDropboxConfigured } from './config.js';
 import { mountLibrary } from './views/library.js';
 import { h } from './lib/dom.js';
 
 applyTheme();
 
 // Which cloud sources this build has (no values are printed). Handy when a tile is missing.
-console.info(
-  `[Bookworm] Google Drive: ${isDriveConfigured() ? 'on' : `off (the build is missing ${[getClientId() ? '' : 'GOOGLE_CLIENT_ID', getApiKey() ? '' : 'GOOGLE_API_KEY'].filter(Boolean).join(' and ')})`}; Dropbox: ${isDropboxConfigured() ? 'on' : 'off'}.`,
-);
+const driveStatus = isDriveConfigured()
+  ? 'on'
+  : !isDriveSwitchedOn()
+    ? 'coming soon (set VITE_GOOGLE_DRIVE=on to switch it on)'
+    : `off (the build is missing ${[getClientId() ? '' : 'GOOGLE_CLIENT_ID', getApiKey() ? '' : 'GOOGLE_API_KEY'].filter(Boolean).join(' and ')})`;
+console.info(`[Bookworm] Google Drive: ${driveStatus}; Dropbox: ${isDropboxConfigured() ? 'on' : 'off'}.`);
 
 const app = document.getElementById('app');
 let unmount = null;
@@ -42,6 +45,20 @@ async function route() {
   }
 
   view = 'reader';
+  if (match[1] === 'drive' && !isDriveConfigured()) {
+    // A saved link to a Drive book while Drive is switched off.
+    document.title = 'Bookworm';
+    app.replaceChildren(
+      h(
+        'div',
+        { class: 'mx-auto max-w-md p-8 text-center' },
+        h('p', { class: 'font-display text-xl' }, 'Google Drive is coming soon.'),
+        h('p', { class: 'mt-2 text-muted' }, 'This book lives in Google Drive, which is not switched on yet. Books from your device are unaffected.'),
+        h('a', { class: 'btn btn-primary mt-6', href: '#/' }, 'Back to library'),
+      ),
+    );
+    return;
+  }
   try {
     // The reader (and the PDF viewer inside it) is only fetched when needed.
     const { mountReader } = await import('./reader/index.js');

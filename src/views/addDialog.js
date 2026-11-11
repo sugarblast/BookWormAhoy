@@ -7,7 +7,7 @@ import { ACCEPT } from '../lib/formats.js';
 import { createStorageMeter } from './storageMeter.js';
 
 /**
- * sources: { drive: boolean, dropbox: boolean }
+ * sources: { drive: true | 'soon' | false, dropbox: boolean }   ('soon' shows a disabled "Coming soon" tile)
  * handlers: { onFiles(files), onDrive(), onDropbox(), onDriveIntent(), onDropboxIntent() }
  *
  * The *Intent handlers fire when someone points at, focuses or presses a source's tile,
@@ -29,6 +29,17 @@ export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onDriveInt
     if (onIntent) for (const type of ['pointerenter', 'pointerdown', 'focus']) el.addEventListener(type, () => onIntent(), { passive: true });
     return el;
   };
+
+  // A source that is not switched on yet: visible and focusable so people (and screen readers) can see it
+  // is planned, but it does nothing, loads nothing and keeps the window open.
+  const soonTile = (label, id) =>
+    h(
+      'button',
+      { class: 'tile', type: 'button', 'data-source': id, 'aria-disabled': 'true', title: `${label} is coming soon`, onclick: (event) => event.preventDefault() },
+      icon(id, 'size-7'),
+      h('span', null, label),
+      h('span', { class: 'tile-hint' }, 'Coming soon'),
+    );
 
   input.addEventListener('change', () => {
     const files = [...input.files];
@@ -59,7 +70,11 @@ export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onDriveInt
     'div',
     { class: 'tiles' },
     tile('This device', 'Files on this computer or phone', 'monitor', () => input.click(), 'device'),
-    sources.drive ? tile('Google Drive', 'Pick books in Google\'s window', 'drive', () => finish(onDrive), 'drive', onDriveIntent) : null,
+    sources.drive === 'soon'
+      ? soonTile('Google Drive', 'drive')
+      : sources.drive
+        ? tile('Google Drive', 'Pick books in Google\'s window', 'drive', () => finish(onDrive), 'drive', onDriveIntent)
+        : null,
     sources.dropbox ? tile('Dropbox', 'Pick books, saved to this browser', 'dropbox', () => finish(onDropbox), 'dropbox', onDropboxIntent) : null,
   );
 

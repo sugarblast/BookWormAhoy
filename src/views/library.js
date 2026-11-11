@@ -339,8 +339,10 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       db.get('meta', 'driveBooks').catch(() => null),
     ]);
     if (destroyed) return;
-    state.progress = progress;
-    state.drive = (saved?.files ?? []).map(driveBook);
+    // While Google Drive is switched off its books stay saved but out of sight; they return when it is on.
+    const driveOn = isDriveConfigured();
+    state.progress = driveOn ? progress : new Map([...progress].filter(([id]) => !id.startsWith('drive:')));
+    state.drive = driveOn ? (saved?.files ?? []).map(driveBook) : [];
     state.ready = true;
     render();
     db.delete('meta', 'driveList').catch(() => {}); // cache from the old "list the whole Drive" design
@@ -430,7 +432,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
   function openAdd() {
     openAddDialog({
-      sources: { drive: isDriveConfigured(), dropbox: isDropboxConfigured() },
+      sources: { drive: isDriveConfigured() ? true : 'soon', dropbox: isDropboxConfigured() },
       onFiles: (files) => addLocalFiles(files),
       onDrive: () => openFromDrive(),
       onDropbox: () => openFromDropbox(),

@@ -36,5 +36,12 @@ export function getAppId() {
   return /^\d+$/.test(first) ? first : '';
 }
 
-export const isDriveConfigured = () => Boolean(getClientId() && getApiKey());
+/**
+ * Google Drive is switched on with VITE_GOOGLE_DRIVE=on, on top of the two Google values. Until then
+ * the Add books window shows it as "Coming soon" and the app never contacts Google. Keep it off while
+ * the Google OAuth app is still in Testing (anyone outside the test users would hit "Access blocked").
+ */
+export const isDriveSwitchedOn = () => clean(import.meta.env.VITE_GOOGLE_DRIVE).toLowerCase() === 'on';
+
+export const isDriveConfigured = () => Boolean(isDriveSwitchedOn() && getClientId() && getApiKey());
 export const isDropboxConfigured = () => Boolean(getDropboxKey());

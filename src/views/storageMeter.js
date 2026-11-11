@@ -4,6 +4,7 @@ import { formatBytes, h, toast } from '../lib/dom.js';
 
 const size = (bytes) => formatBytes(bytes) || '0 B';
 import { getStorage, requestPersistence } from '../lib/storage.js';
+import { isDriveConfigured } from '../config.js';
 
 export function createStorageMeter() {
   const el = h('div', { class: 'storage', 'aria-label': 'Browser storage' });
@@ -22,7 +23,7 @@ export function createStorageMeter() {
     const percent = info.usage > 0 ? Math.max(1.5, used * 100) : 0;
     const ownTotal = info.own.books + info.own.covers;
     const lines = [
-      `${info.own.bookCount} ${info.own.bookCount === 1 ? 'book is' : 'books are'} saved in this browser (${size(info.own.books)}). Books from Google Drive are not copied here, only a small cover each.`,
+      `${info.own.bookCount} ${info.own.bookCount === 1 ? 'book is' : 'books are'} saved in this browser (${size(info.own.books)}).${isDriveConfigured() ? ' Books from Google Drive are not copied here, only a small cover each.' : ''}`,
     ];
     el.replaceChildren(
       h(

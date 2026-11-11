@@ -7,6 +7,7 @@
 
 import { db } from './db.js';
 import { formatBytes } from './dom.js';
+import { isDriveConfigured } from '../config.js';
 
 const size = (bytes) => formatBytes(bytes) || '0 B';
 
@@ -68,7 +69,7 @@ export async function assertRoom(bytes, name) {
   const margin = 8 * 1024 * 1024;
   if (bytes + margin > room.free) {
     throw new StorageFullError(
-      `"${name}" is ${size(bytes)} but this browser only has about ${size(room.free)} left for Bookworm. Take some books off the shelf with the ✕ button, or open it from Google Drive instead.`,
+      `"${name}" is ${size(bytes)} but this browser only has about ${size(room.free)} left for Bookworm. Take some books off the shelf with the ✕ button${isDriveConfigured() ? ', or open it from Google Drive instead' : ''}.`,
     );
   }
 }
