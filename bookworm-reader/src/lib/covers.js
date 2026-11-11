@@ -1,0 +1,112 @@
+// Cover thumbnails: page 1 of each PDF, or the cover image inside an ebook,
+// cached in IndexedDB.
+//
+// Jobs run two at a time so a big Drive does not saturate the connection. The
+// PDF engine is imported lazily on the first job. Cached covers are reused
+// until the file's modified time changes.
+
+import { db } from './db.js';
+
+const MAX_CONCURRENT = 2;
+const queue = [];
+const failed = new Set();
+let running = 0;
+
+/**
+ * Resolves to a cover Blob, or null if one cannot be made (encrypted, broken,
+ * cancelled). Rejects with AuthError when Drive needs reconnecting.
+ * `token.cancelled = true` skips the job if it has not started yet.
+ */
+export function requestCover(book, token = { cancelled: false }) {
+  return new Promise((resolve, reject) => {
+    queue.push({ book, token, resolve, reject });
+    pump();
+  });
+}
+
+function pump() {
+  while (running < MAX_CONCURRENT && queue.length) {
+    const job = queue.shift();
+    if (job.token.cancelled) {
+      job.resolve(null);
+      continue;
+    }
+    running++;
+    run(job)
+      .then(job.resolve, job.reject)
+      .finally(() => {
+        running--;
+        pump();
+      });
+  }
+}
+
+async function run({ book, token }) {
+  try {
+    const cached = await db.get('covers', book.id);
+    if (cached?.blob && (!book.modified || !cached.version || cached.version === book.modified)) {
+      return cached.blob;
+    }
+  } catch {
+    /* cache unreadable: render fresh */
+  }
+  if (failed.has(book.id) || token.cancelled) return null;
+  if (book.format && book.format !== 'pdf') return bookCoverFor(book);
+
+  try {
+    const { openBook, renderCover } = await import('./pdfdoc.js');
+    const { pdf, task } = await openBook(book, { forCover: true });
+    try {
+      const { blob } = await renderCover(pdf);
+      try {
+        await db.put('covers', { id: book.id, version: book.modified, blob });
+      } catch {
+        /* storage full: the cover still shows this session */
+      }
+      return blob;
+    } finally {
+      task.destroy();
+    }
+  } catch (error) {
+    if (error?.name === 'AuthError') throw error;
+    failed.add(book.id);
+    return null;
+  }
+}
+
+/**
+ * Ebooks keep their cover as an image inside the file. A book stored in this
+ * browser is read here; a Drive book is not downloaded just for its cover, so
+ * it shows the plain cover until it has been opened once (the reader saves it).
+ */
+async function bookCoverFor(book) {
+  if (book.source !== 'local') return null;
+  try {
+    const record = await db.get('files', book.fileId);
+    if (!record?.blob) return null;
+    const { coverFor } = await import('./ebook/index.js');
+    const blob = await coverFor(record.blob, book.format, book.name);
+    if (!blob) {
+      failed.add(book.id);
+      return null;
+    }
+    try {
+      await db.put('covers', { id: book.id, version: book.modified, blob });
+    } catch {
+      /* storage full: the cover still shows this session */
+    }
+    return blob;
+  } catch {
+    failed.add(book.id);
+    return null;
+  }
+}
+
+export async function forgetCover(bookId) {
+  failed.delete(bookId);
+  try {
+    await db.delete('covers', bookId);
+  } catch {
+    /* nothing cached */
+  }
+}

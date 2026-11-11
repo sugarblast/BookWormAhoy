@@ -6,7 +6,9 @@
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Privacy policy for Bookworm, a free, open-source PDF and ebook reader that runs entirely in your browser.">
   <title>Privacy Policy · Bookworm</title>
-  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <style>
     :root {
       --bg: #f7f3ea;
@@ -51,7 +53,8 @@
       text-decoration: none;
     }
     .back:hover { text-decoration: underline; }
-    header { border-bottom: 2px solid var(--accent-line); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    header { display: flex; align-items: center; gap: 1rem; border-bottom: 2px solid var(--accent-line); padding-bottom: 1.25rem; margin-bottom: 1.75rem; }
+    header .logo { flex: none; width: 4.5rem; height: 4.5rem; border-radius: 1rem; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
     .eyebrow {
       margin: 0 0 0.35rem;
       color: var(--gold);
@@ -106,9 +109,12 @@
     <a class="back" href="./">← Back to Bookworm</a>
 
     <header>
+      <img class="logo" src="logo.webp" width="72" height="72" alt="Bookworm Ahoy logo">
+      <div>
       <p class="eyebrow">Bookworm · Ship's Log</p>
       <h1>Privacy Policy</h1>
       <p class="meta">Last updated: November 9, 2026</p>
+      </div>
     </header>
 
     <div class="summary" role="note">

@@ -1,0 +1,27 @@
+{
+  "name": "bookworm-reader",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Zero-backend reader for PDFs and ebooks (EPUB, MOBI, FB2, CBZ, TXT) from your device, Google Drive or Dropbox. Runs entirely in the browser; deploys as static files.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "predev": "node scripts/copy-pdfjs-assets.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-pdfjs-assets.mjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/hanken-grotesk": "^5.0.0",
+    "@fontsource-variable/literata": "^5.0.0",
+    "pdfjs-dist": "^6.2.108"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "tailwindcss": "^4.3.0",
+    "vite": "^7.0.0"
+  }
+}
