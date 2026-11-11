@@ -596,6 +596,33 @@ a:focus-visible {
   max-width: none;
 }
 
+/* Book reader (EPUB, MOBI, FB2, comics, text): the page text lives in a sandboxed frame */
+.book-stage {
+  position: absolute;
+  inset: 3.5rem 0 3.25rem;
+  overflow: hidden;
+  background: var(--page-bg);
+}
+.book-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  transition: opacity 0.15s ease;
+}
+.book-stage[data-loading="true"] .book-frame {
+  opacity: 0;
+}
+.reader[data-flow="scroll"] .edge-nav {
+  display: none;
+}
+.text-panel {
+  width: min(21rem, calc(100vw - 1.5rem));
+  padding: 0;
+}
+
 /* Reading modes tint the rendered page, not the text layer */
 :root[data-theme="sepia"] .paper,
 :root[data-theme="sepia"] .pdfViewer .page canvas {

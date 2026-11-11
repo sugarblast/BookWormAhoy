@@ -2,7 +2,7 @@
   "name": "bookworm-reader",
   "private": true,
   "version": "0.1.0",
-  "description": "Zero-backend PDF reader that opens the PDFs in your Google Drive like books. Runs entirely in the browser; hosted on GitHub Pages.",
+  "description": "Zero-backend reader for PDFs and ebooks (EPUB, MOBI, FB2, CBZ, TXT) from your device, Google Drive or Dropbox. Runs entirely in the browser; deploys as static files.",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"

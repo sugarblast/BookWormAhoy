@@ -25,8 +25,8 @@ function contentSecurityPolicy() {
 }
 
 export default defineConfig({
-  // Relative base so the same build works at https://<user>.github.io/<repo>/
-  // and at a custom domain. Routing uses the URL hash, so no 404.html tricks.
+  // Relative base so the same build works at a domain root (Cloudflare Pages, a custom
+  // domain) or under a sub-path. Routing uses the URL hash, so no 404.html tricks.
   base: './',
   plugins: [tailwindcss(), contentSecurityPolicy()],
   build: {

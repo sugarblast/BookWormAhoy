@@ -114,7 +114,7 @@ export function toast(message, { kind = 'info', timeout = 5000 } = {}) {
  * Small popover menu anchored to a button. `host` must be position: relative
  * and contain the anchor. Items: { label, hint?, checked?, onSelect } or { separator: true }.
  */
-export function createMenu({ anchor, host, getItems, align = 'end' }) {
+export function createMenu({ anchor, host, getItems, align = 'end', onOpen }) {
   let el = null;
 
   function close({ restoreFocus = false } = {}) {
@@ -168,6 +168,7 @@ export function createMenu({ anchor, host, getItems, align = 'end' }) {
 
   function open() {
     close();
+    onOpen?.();
     el = h('div', { class: `menu menu-${align}`, role: 'menu' }, getItems().map(renderItem));
     host.append(el);
     anchor.setAttribute('aria-expanded', 'true');

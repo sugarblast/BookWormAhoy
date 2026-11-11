@@ -23,8 +23,8 @@ let view = null;
 let routeToken = 0;
 let libraryScroll = 0;
 
-// Hash routing (#/ and #/read/<drive|local>/<id>) because GitHub Pages cannot
-// rewrite unknown paths to index.html.
+// Hash routing (#/ and #/read/<drive|local>/<id>) so any static host works without
+// rewriting unknown paths to index.html.
 async function route() {
   const token = ++routeToken;
   if (view === 'library') libraryScroll = window.scrollY;
@@ -44,7 +44,7 @@ async function route() {
   view = 'reader';
   try {
     // The reader (and the PDF viewer inside it) is only fetched when needed.
-    const { mountReader } = await import('./reader/reader.js');
+    const { mountReader } = await import('./reader/index.js');
     if (token !== routeToken) return;
     unmount = mountReader(app, { source: match[1], fileId: decodeURIComponent(match[2]) });
   } catch (error) {

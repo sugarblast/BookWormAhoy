@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="Privacy policy for Bookworm, a free, open-source PDF reader that runs entirely in your browser.">
+  <meta name="description" content="Privacy policy for Bookworm, a free, open-source PDF and ebook reader that runs entirely in your browser.">
   <title>Privacy Policy · Bookworm</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <style>
@@ -103,12 +103,12 @@
 </head>
 <body>
   <div class="wrap">
-    <a class="back" href="https://sugarblast.github.io/BookWormAhoy/">← Back to Bookworm</a>
+    <a class="back" href="./">← Back to Bookworm</a>
 
     <header>
       <p class="eyebrow">Bookworm · Ship's Log</p>
       <h1>Privacy Policy</h1>
-      <p class="meta">Last updated: November 1, 2026</p>
+      <p class="meta">Last updated: November 9, 2026</p>
     </header>
 
     <div class="summary" role="note">
@@ -117,7 +117,7 @@
 
     <main>
       <h2 id="overview">Overview</h2>
-      <p>Bookworm is a free, open-source PDF reader that runs entirely in your web browser. It is a client-side single-page application hosted on GitHub Pages, built on a <em>Bring Your Own Storage</em> model: your books stay wherever you keep them (your device, your Google Drive or your Dropbox), and Bookworm only opens them for reading.</p>
+      <p>Bookworm is a free, open-source reader for PDFs and ebooks (EPUB, MOBI, FB2, CBZ comics and plain text) that runs entirely in your web browser. It is a client-side single-page application served as static files from Cloudflare, built on a <em>Bring Your Own Storage</em> model: your books stay wherever you keep them (your device, your Google Drive or your Dropbox), and Bookworm only opens them for reading.</p>
       <p>There is no Bookworm account, no sign-up, and no Bookworm backend. The site's author has no server that could receive, hold or look through your files, even if we wanted to.</p>
       <p>This policy explains what the app does with information in your browser and what happens when you choose to connect Google Drive or Dropbox. The source code is public at <a href="https://github.com/sugarblast/BookWormAhoy">github.com/sugarblast/BookWormAhoy</a>, so you can check every claim here against the code.</p>
 
@@ -129,15 +129,15 @@
         <li>use analytics, advertising, tracking pixels, fingerprinting or third-party tracking cookies;</li>
         <li>sell, rent, share or otherwise disclose your information to anyone.</li>
       </ul>
-      <p><strong>Hosting.</strong> The site is served by GitHub Pages. Like any web host, GitHub may process technical request data such as your IP address and browser type when your browser loads the page, under <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's Privacy Statement</a>. Bookworm adds no analytics of its own, and its author does not receive this data. The fonts and the PDF engine the app uses are bundled with the site rather than fetched from third-party servers.</p>
+      <p><strong>Hosting.</strong> The site is hosted on Cloudflare. Like any web host and content delivery network, Cloudflare processes technical request data such as your IP address and browser type when your browser loads a page, in order to deliver the site and protect it from abuse, under <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's Privacy Policy</a>. Bookworm adds no analytics of its own, and its author does not receive this data. The fonts and the PDF engine the app uses are bundled with the site rather than fetched from third-party servers.</p>
 
       <h2 id="cloud-apis">Google Drive &amp; Dropbox API Usage</h2>
-      <p>Connecting a cloud service is optional. Bookworm uses Google Drive and Dropbox for one purpose only: so you can select your own ebook files (PDFs) from your personal cloud accounts and read them in the app.</p>
+      <p>Connecting a cloud service is optional. Bookworm uses Google Drive and Dropbox for one purpose only: so you can select your own books (PDFs and ebooks) from your personal cloud accounts and read them in the app.</p>
 
       <h3>Google Drive</h3>
       <ul>
         <li><strong>Narrow permission.</strong> Bookworm requests only the <code>https://www.googleapis.com/auth/drive.file</code> scope. With it, the app can open only the files you explicitly select in the Google Picker window. It cannot browse, list, search or read the rest of your Drive.</li>
-        <li><strong>Strictly client-side.</strong> Your browser talks to Google directly. Google sends the access token to your browser, and the browser sends it only to Google's servers (<code>googleapis.com</code>) to read the PDFs you chose. No Bookworm server sits in between, because none exists.</li>
+        <li><strong>Strictly client-side.</strong> Your browser talks to Google directly. Google sends the access token to your browser, and the browser sends it only to Google's servers (<code>googleapis.com</code>) to read the books you chose. A PDF is streamed in parts; any other format is downloaded whole into your browser's memory while you read it, and is not saved to your device. No Bookworm server sits in between, because none exists.</li>
         <li><strong>Read-only use.</strong> Bookworm reads the files you select so it can show them to you on your own screen. It does not modify, upload, share or delete anything in your Drive.</li>
         <li><strong>Nothing copied.</strong> Books opened from Drive are streamed to your browser for display. Bookworm remembers only the file's ID, name, size and modified date in your browser so your shelf can list it.</li>
         <li><strong>Account display.</strong> After you sign in, Bookworm asks Google's Drive API for your display name and email address, only to show your initial and email in the account menu. This is held in memory for the visit and is not stored or sent anywhere else.</li>
@@ -150,7 +150,7 @@
       </div>
       <p>In practice, that means:</p>
       <ul>
-        <li>Data received from Google is used only to provide the user-facing feature you asked for: reading the PDFs you picked.</li>
+        <li>Data received from Google is used only to provide the user-facing feature you asked for: reading the books you picked.</li>
         <li>It is never transferred to anyone else. It goes from Google to your browser and stays there.</li>
         <li>It is never used for advertising, including retargeting or interest-based ads.</li>
         <li>It is never sold, and never used to build or train any AI or machine-learning model.</li>
@@ -160,13 +160,23 @@
 
       <h3>Dropbox</h3>
       <ul>
-        <li>Bookworm uses the Dropbox Chooser, a window run by Dropbox where you pick the PDFs you want to open. The Chooser does not give Bookworm access to the rest of your Dropbox, and Bookworm does not keep a Dropbox sign-in or access token.</li>
-        <li>For each file you pick, Dropbox provides a temporary link. Your browser downloads the PDF directly from Dropbox and saves a copy in this browser's local storage so it opens quickly and works offline. Nothing is uploaded to a server we operate.</li>
+        <li>Bookworm uses the Dropbox Chooser, a window run by Dropbox where you pick the books you want to open. The Chooser does not give Bookworm access to the rest of your Dropbox, and Bookworm does not keep a Dropbox sign-in or access token.</li>
+        <li>For each file you pick, Dropbox provides a temporary link. Your browser downloads the book directly from Dropbox and saves a copy in this browser's local storage so it opens quickly and works offline. Nothing is uploaded to a server we operate.</li>
         <li>Bookworm never modifies or deletes anything in your Dropbox.</li>
       </ul>
 
       <h3>Third-party services</h3>
-      <p>When Google Drive is enabled on the site, your browser loads Google's sign-in script (<code>accounts.google.com</code>) when your shelf opens, and Google's file picker (<code>apis.google.com</code>) once you are signed in. Dropbox's Chooser script (<code>www.dropbox.com</code>) loads when you open the Add books window. Loading these scripts means Google and Dropbox can see your IP address and browser details, as with any website you visit, even if you never pick a file. What you do inside their windows is handled under their own policies: <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and <a href="https://www.dropbox.com/privacy">Dropbox Privacy Policy</a>.</p>
+      <p>Nothing from Google or Dropbox is loaded while you browse your shelf, read books, or add files from your device. Google's sign-in script (<code>accounts.google.com</code>) is loaded only when you reach for Google Drive (the cloud icon menu, or pointing at or choosing Google Drive in the Add books window), or if you connected Google Drive on an earlier visit. Google's file picker (<code>apis.google.com</code>) loads once you are signed in, and Dropbox's Chooser script (<code>www.dropbox.com</code>) loads when you point at or choose Dropbox. Loading these scripts means Google and Dropbox can see your IP address and browser details, as with any website you visit, even if you never pick a file. What you do inside their windows is handled under their own policies: <a href="https://policies.google.com/privacy">Google Privacy Policy</a> and <a href="https://www.dropbox.com/privacy">Dropbox Privacy Policy</a>.</p>
+
+      <h2 id="cookies">Cookies and Similar Technologies</h2>
+      <p><strong>Bookworm itself does not set or read any cookies.</strong> It does not use cookies to sign you in, to track you, to measure traffic or to show ads. To remember your books, reading progress and settings it uses your browser's local storage (IndexedDB and <code>localStorage</code>), listed in the next section. That storage is needed for the features you ask for, stays on your device, and is never sent to us.</p>
+      <p>Because Bookworm sets no tracking or advertising cookies, it does not show a cookie banner or ask you to accept cookies. There is nothing to accept or decline.</p>
+      <p>Third parties are the exception, and only if you use them:</p>
+      <ul>
+        <li><strong>Google and Dropbox.</strong> If you connect Google Drive or open the Dropbox Chooser, the scripts and windows they provide may set their own cookies or similar identifiers, under their own policies (see Third-party services above). Bookworm does not control or receive them.</li>
+        <li><strong>Cloudflare.</strong> Depending on how its security features are configured, Cloudflare may use strictly necessary technical cookies or similar data to deliver the site and protect it from abuse. Bookworm does not use them for anything else.</li>
+      </ul>
+      <p>You can block or delete cookies and site data in your browser settings at any time. Bookworm still works for books on your device if you do.</p>
 
       <h2 id="local-storage">Local Storage</h2>
       <p>Everything Bookworm remembers lives in your browser, on your device, and is never synced or sent to us:</p>
@@ -176,7 +186,7 @@
             <tr><th scope="col">Where</th><th scope="col">What it holds</th></tr>
           </thead>
           <tbody>
-            <tr><td>IndexedDB</td><td>PDFs you add from this device or Dropbox, generated cover thumbnails, your last-read page for each book, and the list of Drive files you picked (ID, name, size, date).</td></tr>
+            <tr><td>IndexedDB</td><td>Books you add from this device or Dropbox, generated cover thumbnails, your last-read place for each book, and the list of Drive files you picked (ID, name, size, date).</td></tr>
             <tr><td>localStorage</td><td>Display settings (theme, page layout, zoom, sort order, sidebar), plus the short-lived Google Drive access token and a "connected" flag if you signed in.</td></tr>
           </tbody>
         </table>
@@ -206,7 +216,7 @@
     <footer>
       <p>Bookworm is a hobby project made by a bookworm, for bookworms. No treasure was harvested in the making of this policy.</p>
       <p><a href="terms.html">Terms of Service</a></p>
-      <p><a href="https://sugarblast.github.io/BookWormAhoy/">← Back to Bookworm</a></p>
+      <p><a href="./">← Back to Bookworm</a></p>
     </footer>
   </div>
 </body>

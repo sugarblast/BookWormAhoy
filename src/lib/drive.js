@@ -42,7 +42,7 @@ async function driveFetch(path, params = {}, { signal } = {}, retried = false) {
   return response;
 }
 
-const FILE_FIELDS = 'id,name,size,modifiedTime';
+const FILE_FIELDS = 'id,name,size,modifiedTime,mimeType';
 
 export async function getFileMeta(fileId, { signal } = {}) {
   const response = await driveFetch(`/files/${encodeURIComponent(fileId)}`, {
@@ -60,3 +60,24 @@ export async function getAccount() {
 /** URL PDF.js streams from (it sends the Authorization header itself). */
 export const mediaUrl = (fileId) =>
   `${API}/files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`;
+
+/**
+ * Downloads a whole file into memory (for books that are not PDFs; PDF.js streams PDFs
+ * itself). Nothing is stored: the Blob lives only while the book is open.
+ */
+export async function downloadFile(fileId, { signal, onProgress, expectedSize = 0 } = {}) {
+  const response = await driveFetch(`/files/${encodeURIComponent(fileId)}`, { alt: 'media', supportsAllDrives: true }, { signal });
+  const total = Number(response.headers.get('content-length')) || expectedSize;
+  if (!response.body?.getReader) return response.blob();
+  const reader = response.body.getReader();
+  const chunks = [];
+  let loaded = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loaded += value.length;
+    onProgress?.(total ? Math.min(1, loaded / total) : 0, loaded);
+  }
+  return new Blob(chunks);
+}
