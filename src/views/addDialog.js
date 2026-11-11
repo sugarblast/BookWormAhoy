@@ -1,17 +1,22 @@
-// "Add books" window: pick where the PDFs come from (this device, Google Drive,
+// "Add books" window: pick where the books come from (this device, Google Drive,
 // Dropbox) or drop files on it. Also shows how much browser storage is left.
 
 import { h } from '../lib/dom.js';
 import { icon } from '../lib/icons.js';
+import { ACCEPT } from '../lib/formats.js';
 import { createStorageMeter } from './storageMeter.js';
 
 /**
  * sources: { drive: boolean, dropbox: boolean }
- * handlers: { onFiles(files), onDrive(), onDropbox(), onOpen() }
+ * handlers: { onFiles(files), onDrive(), onDropbox(), onDriveIntent(), onDropboxIntent() }
+ *
+ * The *Intent handlers fire when someone points at, focuses or presses a source's tile,
+ * just before the click. They let a source warm up its third-party script in time for the
+ * click without contacting Google or Dropbox for people who only add files from this device.
  */
-export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onOpen }) {
+export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onDriveIntent, onDropboxIntent }) {
   const meter = createStorageMeter();
-  const input = h('input', { type: 'file', accept: 'application/pdf,.pdf', multiple: true, class: 'hidden', 'aria-label': 'Choose PDF files from this device' });
+  const input = h('input', { type: 'file', accept: ACCEPT, multiple: true, class: 'hidden', 'aria-label': 'Choose book files from this device' });
 
   const dialog = h('dialog', { class: 'sheet', 'aria-labelledby': 'add-books-title' });
   const finish = (action) => {
@@ -19,8 +24,11 @@ export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onOpen }) 
     action();
   };
 
-  const tile = (label, hint, iconName, onclick, id) =>
-    h('button', { class: 'tile', type: 'button', 'data-source': id, onclick }, icon(iconName, 'size-7'), h('span', null, label), h('span', { class: 'tile-hint' }, hint));
+  const tile = (label, hint, iconName, onclick, id, onIntent) => {
+    const el = h('button', { class: 'tile', type: 'button', 'data-source': id, onclick }, icon(iconName, 'size-7'), h('span', null, label), h('span', { class: 'tile-hint' }, hint));
+    if (onIntent) for (const type of ['pointerenter', 'pointerdown', 'focus']) el.addEventListener(type, () => onIntent(), { passive: true });
+    return el;
+  };
 
   input.addEventListener('change', () => {
     const files = [...input.files];
@@ -32,7 +40,7 @@ export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onOpen }) 
     'div',
     { class: 'dropzone', 'data-over': 'false' },
     icon('upload', 'size-7'),
-    h('p', { class: 'font-medium text-ink' }, 'Drop PDFs here'),
+    h('p', { class: 'font-medium text-ink' }, 'Drop books here'),
     h('p', { class: 'text-sm' }, 'or choose where they are below'),
   );
   dropzone.addEventListener('dragover', (event) => {
@@ -51,8 +59,8 @@ export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onOpen }) 
     'div',
     { class: 'tiles' },
     tile('This device', 'Files on this computer or phone', 'monitor', () => input.click(), 'device'),
-    sources.drive ? tile('Google Drive', 'Pick PDFs in Google\'s window', 'drive', () => finish(onDrive), 'drive') : null,
-    sources.dropbox ? tile('Dropbox', 'Pick PDFs, saved to this browser', 'dropbox', () => finish(onDropbox), 'dropbox') : null,
+    sources.drive ? tile('Google Drive', 'Pick books in Google\'s window', 'drive', () => finish(onDrive), 'drive', onDriveIntent) : null,
+    sources.dropbox ? tile('Dropbox', 'Pick books, saved to this browser', 'dropbox', () => finish(onDropbox), 'dropbox', onDropboxIntent) : null,
   );
 
   const parts = [
@@ -81,6 +89,5 @@ export function openAddDialog({ sources, onFiles, onDrive, onDropbox, onOpen }) 
   document.body.append(dialog);
   dialog.showModal();
   meter.refresh();
-  onOpen?.();
   return dialog;
 }

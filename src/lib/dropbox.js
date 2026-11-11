@@ -1,8 +1,9 @@
-// "Dropbox" source: Dropbox's Chooser window picks the PDFs, then each one is
+// "Dropbox" source: Dropbox's Chooser window picks the books, then each one is
 // downloaded into this browser (the Chooser's links expire after a few hours,
 // so there is nothing to keep a reference to). Needs a Dropbox app key.
 
 import { getDropboxKey } from '../config.js';
+import { DROPBOX_EXTENSIONS, detectFormat } from './formats.js';
 
 const SCRIPT_SRC = 'https://www.dropbox.com/static/api/2/dropins.js';
 
@@ -45,7 +46,7 @@ function openChooser() {
     window.Dropbox.choose({
       linkType: 'direct',
       multiselect: true,
-      extensions: ['.pdf'],
+      extensions: DROPBOX_EXTENSIONS,
       folderselect: false,
       success: (files) => resolve(files.filter((file) => !file.isDir).map(({ name, link, bytes }) => ({ name, link, bytes: Number(bytes) || 0 }))),
       cancel: () => resolve([]),
@@ -53,7 +54,7 @@ function openChooser() {
   });
 }
 
-/** Opens Dropbox's file window; resolves with the chosen PDFs ([] if cancelled). */
+/** Opens Dropbox's file window; resolves with the chosen books ([] if cancelled). */
 export function chooseFromDropbox() {
   // Already loaded: open synchronously so the browser counts it as part of the click.
   if (window.Dropbox?.choose) return openChooser();
@@ -84,8 +85,9 @@ export async function downloadFromDropbox(file, { onProgress } = {}) {
   } else {
     chunks.push(new Uint8Array(await response.arrayBuffer()));
   }
-  const blob = new Blob(chunks, { type: 'application/pdf' });
-  if ((await blob.slice(0, 5).text()) !== '%PDF-') throw new DropboxError('This file does not look like a PDF.', 'invalid');
+  const isPdf = detectFormat(file.name) === 'pdf';
+  const blob = new Blob(chunks, isPdf ? { type: 'application/pdf' } : {});
+  if (isPdf && (await blob.slice(0, 5).text()) !== '%PDF-') throw new DropboxError('This file does not look like a PDF.', 'invalid');
   onProgress?.(1);
   return blob;
 }

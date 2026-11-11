@@ -26,7 +26,7 @@ async function estimate() {
   }
 }
 
-/** What Bookworm itself keeps: the PDFs copied here and the small cover images. */
+/** What Bookworm itself keeps: the books copied here and the small cover images. */
 async function ownBytes() {
   try {
     const [files, covers] = await Promise.all([db.all('files'), db.all('covers')]);

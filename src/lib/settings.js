@@ -9,6 +9,10 @@ const DEFAULTS = {
   sort: 'recent', // 'recent' | 'title' | 'modified' | 'size'
   sidebar: false,
   sidebarTab: 'contents', // 'contents' | 'pages'
+  bookFlow: 'paged', // 'paged' | 'scroll' (EPUB and other books)
+  bookSize: 100, // text size in percent
+  bookFamily: 'serif', // 'serif' | 'sans'
+  bookSpacing: 'normal', // 'compact' | 'normal' | 'relaxed'
 };
 
 let cache = null;

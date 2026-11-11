@@ -1,11 +1,11 @@
-// "Open from Google Drive": the Google Picker window. The user chooses PDFs in a
+// "Open from Google Drive": the Google Picker window. The user chooses books in a
 // Google-hosted dialog and the app receives access to exactly those files
 // (scope `drive.file`), not the rest of the Drive.
 
 import { getApiKey, getAppId } from '../config.js';
+import { PICKER_MIMES, detectFormat, isSupported } from './formats.js';
 
 const LOADER_SRC = 'https://apis.google.com/js/api.js';
-const PDF = 'application/pdf';
 
 export class PickerError extends Error {
   constructor(message, code) {
@@ -52,7 +52,7 @@ function toFile(doc) {
   const edited = Number(field(doc, 'LAST_EDITED_UTC', 'lastEditedUtc'));
   return {
     id: String(field(doc, 'ID', 'id')),
-    name: String(field(doc, 'NAME', 'name') ?? 'Untitled.pdf'),
+    name: String(field(doc, 'NAME', 'name') ?? 'Untitled'),
     mimeType: String(field(doc, 'MIME_TYPE', 'mimeType') ?? ''),
     size: Number(field(doc, 'SIZE_BYTES', 'sizeBytes')) || 0,
     modifiedTime: edited > 0 ? new Date(edited).toISOString() : null,
@@ -60,20 +60,21 @@ function toFile(doc) {
 }
 
 /**
- * Opens the picker and resolves with the PDFs the user chose ([] if they
+ * Opens the picker and resolves with `{ files, skipped }`: the books Bookworm can
+ * open, and the names of chosen files it cannot (both empty if the user
  * cancelled). `token` is a fresh `drive.file` access token.
  */
-export async function pickPdfs({ token }) {
+export async function pickBooks({ token }) {
   const apiKey = getApiKey();
   if (!apiKey) throw new PickerError('Google Drive picking needs an API key. See the README.', 'no_api_key');
   await preloadPicker();
   const picker = window.google.picker;
 
   return new Promise((resolve) => {
-    const view = new picker.DocsView(picker.ViewId.DOCS).setMimeTypes(PDF).setIncludeFolders(true);
+    const view = new picker.DocsView(picker.ViewId.DOCS).setMimeTypes(PICKER_MIMES).setIncludeFolders(true);
     const builder = new picker.PickerBuilder()
       .addView(view)
-      .setTitle('Choose PDFs')
+      .setTitle('Choose books')
       .setOAuthToken(token)
       .setDeveloperKey(apiKey)
       .enableFeature(picker.Feature.MULTISELECT_ENABLED)
@@ -81,9 +82,12 @@ export async function pickPdfs({ token }) {
         const action = data[picker.Response.ACTION];
         if (action === picker.Action.PICKED) {
           const docs = data[picker.Response.DOCUMENTS] ?? [];
-          resolve(docs.map(toFile).filter((file) => file.id && file.mimeType === PDF));
+          // Drive often labels ebooks as generic zip or binary files, so the name decides.
+          const chosen = docs.map(toFile).filter((file) => file.id);
+          const files = chosen.filter((file) => isSupported(detectFormat(file.name, file.mimeType)));
+          resolve({ files, skipped: chosen.filter((file) => !files.includes(file)).map((file) => file.name) });
         } else if (action === picker.Action.CANCEL) {
-          resolve([]);
+          resolve({ files: [], skipped: [] });
         }
       });
     const appId = getAppId();

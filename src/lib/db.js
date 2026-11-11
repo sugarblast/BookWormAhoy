@@ -1,7 +1,7 @@
 // IndexedDB wrapper. Four object stores, all keyed by `id`:
 //   progress  last page read per book
 //   covers    generated cover thumbnails (Blobs)
-//   files     PDFs opened from this device (Blobs)
+//   files     books added to this browser (Blobs; `format` says which kind)
 //   meta      small cached values, e.g. the last Drive listing
 //
 // If IndexedDB is unavailable (some private-browsing modes) everything falls

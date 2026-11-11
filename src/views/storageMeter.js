@@ -22,7 +22,7 @@ export function createStorageMeter() {
     const percent = info.usage > 0 ? Math.max(1.5, used * 100) : 0;
     const ownTotal = info.own.books + info.own.covers;
     const lines = [
-      `${info.own.bookCount} ${info.own.bookCount === 1 ? 'PDF is' : 'PDFs are'} saved in this browser (${size(info.own.books)}). Books from Google Drive are not copied here, only a small cover each.`,
+      `${info.own.bookCount} ${info.own.bookCount === 1 ? 'book is' : 'books are'} saved in this browser (${size(info.own.books)}). Books from Google Drive are not copied here, only a small cover each.`,
     ];
     el.replaceChildren(
       h(

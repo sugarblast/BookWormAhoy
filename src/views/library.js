@@ -6,9 +6,10 @@ import { currentTheme, nextTheme, setTheme, settings, THEME_LABELS } from '../li
 import { connect, disconnect, ensureToken, getAuthStatus, onAuthChange, preloadGis } from '../lib/auth.js';
 import { isDriveConfigured, isDropboxConfigured } from '../config.js';
 import { getAccount } from '../lib/drive.js';
-import { pickPdfs, preloadPicker } from '../lib/picker.js';
+import { pickBooks, preloadPicker } from '../lib/picker.js';
 import { chooseFromDropbox, downloadFromDropbox, preloadDropbox } from '../lib/dropbox.js';
 import { assertRoom } from '../lib/storage.js';
+import { detectFormat, formatLabel, supportedList, whyNotSupported } from '../lib/formats.js';
 import { openAddDialog } from './addDialog.js';
 import { createStorageMeter } from './storageMeter.js';
 import { bookCache, bookFromProgress, bookHref, driveBook, localBook } from '../lib/books.js';
@@ -37,6 +38,12 @@ function placeholderCover(book) {
     h('div', { class: 'cover-ph-title' }, book.title),
     h('div', { class: 'cover-ph-rule' }),
   );
+}
+
+/** "Page 12 of 240" for PDFs and comics, "42% read" for reflowable books. */
+function progressText(record) {
+  if (record.unit === 'percent') return `${Math.round((record.fraction ?? fractionRead(record)) * 100)}% read`;
+  return `Page ${record.page} of ${record.numPages}`;
 }
 
 function bookCover(book, record) {
@@ -169,6 +176,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   createMenu({
     anchor: accountButton,
     host: accountHost,
+    onOpen: () => warmGoogle(),
     getItems() {
       const status = getAuthStatus();
       if (status === 'signed-in') {
@@ -256,7 +264,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
   // Legal pages ship with the site (public/privacy.html, public/terms.html). They open
   // in a new tab so nothing about the shelf, an upload or a transfer is interrupted.
-  // BASE_URL keeps the link right on GitHub Pages (/<repo>/) and on localhost (/).
+  // BASE_URL keeps the link right on any host or sub-path (the build uses a relative base).
   const legalLink = (file, label) =>
     h(
       'a',
@@ -281,7 +289,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     ),
   );
 
-  // Dropping PDFs anywhere on the shelf adds them.
+  // Dropping books anywhere on the shelf adds them.
   const hasFiles = (event) => [...(event.dataTransfer?.types ?? [])].includes('Files');
   main.addEventListener('dragover', (event) => {
     if (hasFiles(event)) event.preventDefault();
@@ -333,11 +341,17 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     state.ready = true;
     render();
     db.delete('meta', 'driveList').catch(() => {}); // cache from the old "list the whole Drive" design
+    // Google's scripts are loaded only for people who already connected Drive, or once they
+    // open a Google Drive entry point (see warmGoogle). Browsing the shelf contacts no one.
+    if (getAuthStatus() !== 'signed-out') warmGoogle();
+    if (getAuthStatus() === 'signed-in') loadAccount();
+  }
+
+  /** Fetch Google's sign-in (and, when signed in, picker) scripts so the popup can open straight from a click. */
+  function warmGoogle() {
+    if (!isDriveConfigured()) return;
     preloadGis();
-    if (getAuthStatus() === 'signed-in') {
-      preloadPicker();
-      loadAccount();
-    }
+    if (getAuthStatus() === 'signed-in') preloadPicker().catch(() => {});
   }
 
   function loadAccount() {
@@ -350,12 +364,12 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
   }
 
   function saveDriveBooks() {
-    const files = state.drive.map((book) => ({ id: book.fileId, name: book.name, size: book.size, modifiedTime: book.modified }));
+    const files = state.drive.map((book) => ({ id: book.fileId, name: book.name, size: book.size, modifiedTime: book.modified, format: book.format }));
     return db.put('meta', { id: 'driveBooks', files, savedAt: Date.now() }).catch(() => {});
   }
 
   let picking = false;
-  /** "Open from Google Drive": sign in if needed, show Google's picker, put the chosen PDFs on the shelf. */
+  /** "Open from Google Drive": sign in if needed, show Google's picker, put the chosen books on the shelf. */
   async function openFromDrive() {
     if (picking || destroyed || !isDriveConfigured()) return;
     picking = true;
@@ -369,8 +383,10 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
         token = await ensureToken({ minTtlMs: 120_000 });
         loadAccount();
       }
-      const files = await pickPdfs({ token });
-      if (destroyed || !files.length) return;
+      const { files, skipped } = await pickBooks({ token });
+      if (destroyed) return;
+      if (skipped.length) toast(skippedMessage(skipped), { kind: 'error', timeout: 9000 });
+      if (!files.length) return;
       const shelf = new Map(state.drive.map((book) => [book.fileId, book]));
       const before = shelf.size;
       for (const file of files) shelf.set(file.id, driveBook(file));
@@ -378,7 +394,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       await saveDriveBooks();
       render();
       const added = shelf.size - before;
-      toast(added ? `Added ${added === 1 ? '1 PDF' : `${added} PDFs`} from Google Drive.` : 'Those PDFs are already on your shelf.');
+      toast(added ? `Added ${added === 1 ? '1 book' : `${added} books`} from Google Drive.` : 'Those books are already on your shelf.');
     } catch (error) {
       toast(error?.message ?? 'Could not open the Google Drive picker.', { kind: 'error' });
     } finally {
@@ -415,19 +431,22 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       onFiles: (files) => addLocalFiles(files),
       onDrive: () => openFromDrive(),
       onDropbox: () => openFromDropbox(),
-      onOpen: () => {
-        if (isDropboxConfigured()) preloadDropbox().catch(() => {}); // so its window can open inside the click
+      // Each source's script is fetched only when someone reaches for that source, so it is
+      // ready for the click (popups must open from a click) but untouched otherwise.
+      onDriveIntent: () => warmGoogle(),
+      onDropboxIntent: () => {
+        if (isDropboxConfigured()) preloadDropbox().catch(() => {});
       },
     });
   }
 
-  /** Copies PDFs into this browser's storage, refusing any that clearly will not fit. */
+  /** Copies books into this browser's storage, refusing any that clearly will not fit. */
   async function storeFiles(entries, origin) {
     let added = 0;
     for (const { name, size, blob } of entries) {
       try {
         await assertRoom(size, name);
-        await db.put('files', { id: crypto.randomUUID(), name, size, blob, addedAt: Date.now(), origin });
+        await db.put('files', { id: crypto.randomUUID(), name, size, blob, format: detectFormat(name, blob.type) ?? 'pdf', addedAt: Date.now(), origin });
         added++;
       } catch (error) {
         toast(error?.name === 'StorageFullError' ? error.message : `Could not store ${name}. Your browser may be out of space.`, { kind: 'error', timeout: 9000 });
@@ -440,18 +459,26 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     return added;
   }
 
+  /** One message for the files Bookworm cannot open (it explains why when there is just one). */
+  function skippedMessage(names) {
+    if (names.length === 1) return whyNotSupported(names[0], '');
+    return `Skipped ${names.length} files Bookworm cannot open: ${names.slice(0, 3).join(', ')}${names.length > 3 ? ', and more' : ''}. It reads ${supportedList()}.`;
+  }
+
   async function addLocalFiles(files) {
-    const pdfs = files.filter((file) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name));
-    if (!pdfs.length) {
-      toast('Choose one or more PDF files.', { kind: 'error' });
+    const books = files.filter((file) => !whyNotSupported(file.name, file.type));
+    const skipped = files.filter((file) => !books.includes(file)).map((file) => file.name);
+    if (skipped.length) toast(skippedMessage(skipped), { kind: 'error', timeout: 9000 });
+    if (!books.length) {
+      if (!skipped.length) toast(`Choose one or more books: ${supportedList()}.`, { kind: 'error' });
       return;
     }
-    const added = await storeFiles(pdfs.map((file) => ({ name: file.name, size: file.size, blob: file })), 'device');
-    if (added) toast(added === 1 ? 'Added 1 PDF to this browser.' : `Added ${added} PDFs to this browser.`);
+    const added = await storeFiles(books.map((file) => ({ name: file.name, size: file.size, blob: file })), 'device');
+    if (added) toast(added === 1 ? 'Added 1 book to this browser.' : `Added ${added} books to this browser.`);
   }
 
   let transferring = false;
-  /** Dropbox's window, then each chosen PDF is downloaded into this browser. */
+  /** Dropbox's window, then each chosen book is downloaded into this browser. */
   async function openFromDropbox() {
     if (transferring || destroyed || !isDropboxConfigured()) return;
     let chosen;
@@ -486,7 +513,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       transferring = false;
       renderBanner();
     }
-    if (added) toast(added === 1 ? 'Saved 1 PDF from Dropbox to this browser.' : `Saved ${added} PDFs from Dropbox to this browser.`);
+    if (added) toast(added === 1 ? 'Saved 1 book from Dropbox to this browser.' : `Saved ${added} books from Dropbox to this browser.`);
   }
 
   async function removeLocal(book) {
@@ -538,9 +565,10 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     const { cover, face } = bookCover(book, record);
     loader.attach(face, book);
 
+    const kind = book.format && book.format !== 'pdf' ? formatLabel(book.format) : null;
     const meta = isStarted(record)
-      ? `Page ${record.page} of ${record.numPages}`
-      : [book.source === 'local' ? (book.origin === 'dropbox' ? 'From Dropbox' : 'This device') : null, formatBytes(book.size)].filter(Boolean).join(', ');
+      ? progressText(record)
+      : [book.source === 'local' ? (book.origin === 'dropbox' ? 'From Dropbox' : 'This device') : null, kind, formatBytes(book.size)].filter(Boolean).join(', ');
     const link = h(
       'a',
       { class: 'book-link', href: bookHref(book) },
@@ -612,11 +640,11 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
     return h(
       'section',
       { class: 'mx-auto max-w-2xl py-16 md:py-28' },
-      h('h1', { class: 'max-w-[16ch] font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl' }, 'Read your PDFs like books.'),
+      h('h1', { class: 'max-w-[16ch] font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl' }, 'Read PDFs and ebooks like books.'),
       h(
         'p',
         { class: 'mt-5 max-w-[46ch] text-lg text-muted' },
-        `Add PDFs from ${sourcesText}. Bookworm gives each one a cover, remembers your page, and opens it in a calm reader with a table of contents. It runs entirely in this browser tab, with no Bookworm server in between.`,
+        `Add ${supportedList()} files from ${sourcesText}. Bookworm gives each one a cover, remembers your place, and opens it in a calm reader with a table of contents. It runs entirely in this browser tab, with no Bookworm server in between.`,
       ),
       h('div', { class: 'mt-8' }, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openAdd() }, icon('plus', 'size-4'), 'Add books')),
     );
@@ -672,13 +700,13 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       { class: 'flex items-center gap-2' },
       h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openAdd() }, icon('plus', 'size-4'), 'Add books'),
     );
-    const count = books.length === 1 ? '1 PDF' : `${books.length} PDFs`;
+    const count = books.length === 1 ? '1 book' : `${books.length} books`;
 
     let body;
     if (!books.length && searching) {
-      body = emptyMessage(`No PDFs match "${state.query}"`, 'Check the spelling, or search for a different word from the title.', h('button', { class: 'btn btn-quiet mt-6', type: 'button', onclick: () => { searchInput.value = ''; state.query = ''; renderContent(); } }, 'Clear search'));
+      body = emptyMessage(`No books match "${state.query}"`, 'Check the spelling, or search for a different word from the title.', h('button', { class: 'btn btn-quiet mt-6', type: 'button', onclick: () => { searchInput.value = ''; state.query = ''; renderContent(); } }, 'Clear search'));
     } else if (!books.length) {
-      body = emptyMessage('Your shelf is empty', 'Use Add books to bring in PDFs.');
+      body = emptyMessage('Your shelf is empty', 'Use Add books to bring in PDFs and ebooks.');
     } else {
       body = h('div', { class: 'shelf' }, books.map((book) => bookItem(book)));
     }
