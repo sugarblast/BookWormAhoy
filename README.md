@@ -178,6 +178,8 @@ scripts/copy-pdfjs-assets.mjs   copies PDF.js cmaps/fonts/wasm into public/pdfjs
 public/privacy.html         the privacy policy page (served as /privacy)
 public/terms.html           the terms of service page (served as /terms)
 public/_headers             Cloudflare Pages security and cache headers
+public/logo.webp            the Bookworm Ahoy logo (shelf header, empty-shelf hero, legal pages)
+public/favicon.ico, favicon-32.png, apple-touch-icon.png   browser tab and home-screen icons
 .github/workflows/deploy.yml    optional GitHub Pages deploy (not needed on Cloudflare)
 src/
   main.js                   hash router; lazy-loads the reader

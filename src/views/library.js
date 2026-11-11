@@ -17,6 +17,9 @@ import { db } from '../lib/db.js';
 import { fractionRead, isStarted, loadAllProgress } from '../lib/progress.js';
 import { forgetCover, requestCover } from '../lib/covers.js';
 
+// The logo ships in public/; BASE_URL keeps the path right on any host or sub-path.
+const LOGO_URL = `${import.meta.env.BASE_URL}logo.webp`;
+
 const CLOTH = ['#23594a', '#26364f', '#6b2a2f', '#8a6a24', '#44505c', '#4b3556', '#1f5f66', '#5a4632'];
 const clothFor = (book) => CLOTH[hashString(book.id) % CLOTH.length];
 const THEME_ICONS = { light: 'sun', sepia: 'tone', dark: 'moon' };
@@ -235,7 +238,7 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
       h(
         'a',
         { href: '#/', class: 'order-1 flex items-center gap-2 rounded-md font-display text-xl font-semibold tracking-tight' },
-        h('span', { class: 'mark', 'aria-hidden': 'true' }),
+        h('img', { class: 'size-9 rounded-[0.6rem] shadow-sm', src: LOGO_URL, width: 36, height: 36, alt: '' }),
         'Bookworm',
       ),
       h(
@@ -639,14 +642,20 @@ export function mountLibrary(root, { restoreScroll = 0 } = {}) {
 
     return h(
       'section',
-      { class: 'mx-auto max-w-2xl py-16 md:py-28' },
-      h('h1', { class: 'max-w-[16ch] font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl' }, 'Read PDFs and ebooks like books.'),
+      { class: 'mx-auto grid max-w-4xl items-center gap-8 py-12 md:grid-cols-[1fr_auto] md:gap-14 md:py-24' },
       h(
-        'p',
-        { class: 'mt-5 max-w-[46ch] text-lg text-muted' },
-        `Add ${supportedList()} files from ${sourcesText}. Bookworm gives each one a cover, remembers your place, and opens it in a calm reader with a table of contents. It runs entirely in this browser tab, with no Bookworm server in between.`,
+        'div',
+        { class: 'max-w-2xl' },
+        h('h1', { class: 'max-w-[16ch] font-display text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl' }, 'Read PDFs and ebooks like books.'),
+        h(
+          'p',
+          { class: 'mt-5 max-w-[46ch] text-lg text-muted' },
+          `Add ${supportedList()} files from ${sourcesText}. Bookworm gives each one a cover, remembers your place, and opens it in a calm reader with a table of contents. It runs entirely in this browser tab, with no Bookworm server in between.`,
+        ),
+        h('div', { class: 'mt-8' }, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openAdd() }, icon('plus', 'size-4'), 'Add books')),
       ),
-      h('div', { class: 'mt-8' }, h('button', { class: 'btn btn-primary', type: 'button', onclick: () => openAdd() }, icon('plus', 'size-4'), 'Add books')),
+      // Decorative: the name is already in the header and the heading. Above the text on phones, beside it on wider screens.
+      h('img', { class: 'order-first size-28 rounded-[1.6rem] shadow-lg md:order-none md:size-44 md:rounded-[2.4rem]', src: LOGO_URL, width: 176, height: 176, alt: '' }),
     );
   }
 
